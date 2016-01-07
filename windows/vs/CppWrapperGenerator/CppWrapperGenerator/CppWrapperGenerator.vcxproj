@@ -19,7 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\CppWrapperGenerator.cpp" />
+    <ClInclude Include="util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CppWrapperGenerator.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1F4CBEF8-59A7-4EB5-B264-FDC64ABD2FAD}</ProjectGuid>

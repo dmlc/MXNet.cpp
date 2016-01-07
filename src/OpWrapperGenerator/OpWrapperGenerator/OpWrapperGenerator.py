@@ -60,7 +60,10 @@ class Arg:
             enum = EnumType(self.ConstructEnumTypeName(opName, argName), typeString)
             self.type = enum.name
         else:
-            self.type = self.typeDict[typeString.split(',')[0]]
+            try:
+                self.type = self.typeDict[typeString.split()[0].strip(',')]
+            except:
+                pass
         if typeString.find('default=') != -1:
             self.hasDefault = True
             self.defaultString = typeString.split('default=')[1].strip().strip("'")
@@ -78,8 +81,35 @@ class Arg:
         return typeName
 
 class Op:
+    name = ''
+    description = ''
+    args = []
+
     def __init__(self, name = '', description = '', args = []):
-        pass
+        self.name = name
+        self.description = description
+        self.args = args
+    def GetOpDefinitionString(self, indent=0):
+        # define enums if any
+        # create function header
+        indentStr = ' ' * indent
+        ret = indentStr + 'Symbol %s(' % self.name
+        argIndentStr = ' ' * len(ret)
+        if len(self.args) != 0:
+            ret = ret + self.GetArgString(self.args[0])
+        for i in range(1, len(self.args)):
+            ret = ret + ',\n'
+            ret = ret + argIndentStr + self.GetArgString(self.args[i])
+        ret = ret + ') {\n'
+        # create function body
+        # if there is enum, generate static enum<->string mapping
+        ret = ret + indentStr + '}\n'
+        return ret
+    def GetArgString(self, arg):
+        ret = '%s %s' % (arg.type, arg.name)
+        if arg.hasDefault:
+            ret = ret + '=' + arg.defaultString
+        return ret
 
 def ParseAllOps():
     """
@@ -122,7 +152,17 @@ def ParseAllOps():
         GetOpInfo(handler, byref(name), byref(description), \
             byref(nArgs), byref(argNames), byref(argTypes), \
             byref(argDescs), byref(varArgName))
-        print("%s" % name.value.decode())
+        if name.value.decode()[0]=='_':
+            continue
+        args = []
+        for i in range(0, nArgs.value):
+            arg = Arg(name.value.decode(),
+                      argNames[i].decode(),
+                      argTypes[i].decode(),
+                      argDescs[i].decode())
+            args.append(arg)
+        op = Op(name.value.decode(), description.value.decode(), args)
+        print(op.GetOpDefinitionString())
 
 if __name__ == "__main__":
     #et = EnumType(typeName = 'MyET')
@@ -140,3 +180,5 @@ if __name__ == "__main__":
     #if arg.hasDefault:
     #    decl = decl + "=" + arg.defaultString
     #print(decl)
+    ParseAllOps()
+    pass
