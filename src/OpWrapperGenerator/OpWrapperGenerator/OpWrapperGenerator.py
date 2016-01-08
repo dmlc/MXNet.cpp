@@ -98,6 +98,33 @@ class Op:
             if arg.hasDefault:
                 orderedArgs.append(arg)
         self.args = orderedArgs
+    def WrapDescription(self, desc = ''):
+        ret = []
+        sentences = desc.split('.')
+        if (len(sentences[0]) < 80 and sentences[0][-1] != ','):
+            ret.append(sentences[0] + '.')
+            if len(sentences) == 1:
+                return ret
+            desc = desc[len(sentences[0]) + 1:].strip()           
+        while (len(desc) > 70):
+            # break into more lines
+            newline = desc[:desc.rfind(' ', 0, 70)]
+            ret.append(newline)
+            desc = desc[len(newline):].strip()
+        if (len(desc) < 10):
+            ret[-1] = ret[-1] + ' ' + desc
+        else:
+            ret.append(desc)
+        return ret
+    def GenDescription(self, desc = '', \
+                        firstLineHead = ' * \\brief ', \
+                        otherLineHead = ' *        '):
+        ret = ''
+        descs = self.WrapDescription(desc)
+        ret = ret + firstLineHead + descs[0] + '\n'
+        for i in range(1, len(descs)):
+            ret = ret + otherLineHead + descs[i] + '\n'
+        return ret
     def GetOpDefinitionString(self, indent=0):
         ret = ''
         indentStr = ' ' * indent
@@ -105,17 +132,20 @@ class Op:
         for arg in self.args:
             if arg.isEnum:
                 # comments
-                pattern = ("/*! \\brief %s*/\n")
-                ret = ret + indentStr + (pattern % arg.description)
+                ret = ret + self.GenDescription(self.description, \
+                                        '/*! \\breif ', \
+                                        ' *        ')
+                ret = ret + " */\n"
                 # definition
                 ret = ret + arg.enum.GetDefinitionString(indent) + '\n'
         # create function comments
-        pattern = ("/*!\n"
-                   " * \\brief %s\n")
-        ret = ret + pattern % self.description
+        ret = ret + self.GenDescription(self.description, \
+                                        '/*!\n * \\breif ', \
+                                        ' *        ')
         for arg in self.args:
-            line = " * \\param %s %s\n" % (arg.name, arg.description)
-            ret = ret + line
+            ret = ret + self.GenDescription(arg.description, \
+                                        ' * \\param ', \
+                                        ' *        ')
         ret = ret + " * \\return new symbol\n"
         ret = ret + " */\n"
         # create function header
