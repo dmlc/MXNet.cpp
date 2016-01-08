@@ -10,7 +10,7 @@ class EnumType:
         if (typeString[0] == '{'):  # is a enum type
             isEnum = True
             # parse enum
-            self.enumValues = typeString.strip('{}').split(',')
+            self.enumValues = typeString[typeString.find('{') + 1:typeString.find('}')].split(',')
             for i in range(0, len(self.enumValues)):
                 self.enumValues[i] = self.enumValues[i].strip().strip("'")
         else:
@@ -35,8 +35,10 @@ class EnumType:
             if (i != len(self.enumValues) -1):
                 ret = ret + ","
             ret = ret + "\n"
-        ret = ret + "};\n"
+        ret = ret + indentStr + "};\n"
         return ret
+    def GetConvertEnumVariableToString(self, variable=''):
+        return "%sValues[int(%s)]" % (self.name, variable)
 
 class Arg:
     typeDict = {'boolean':'bool',\
@@ -57,8 +59,8 @@ class Arg:
         self.description = descString
         if (typeString[0] == '{'):  # is enum type
             self.isEnum = True
-            enum = EnumType(self.ConstructEnumTypeName(opName, argName), typeString)
-            self.type = enum.name
+            self.enum = EnumType(self.ConstructEnumTypeName(opName, argName), typeString)
+            self.type = self.enum.name
         else:
             try:
                 self.type = self.typeDict[typeString.split()[0].strip(',')]
@@ -68,8 +70,7 @@ class Arg:
             self.hasDefault = True
             self.defaultString = typeString.split('default=')[1].strip().strip("'")
             if self.isEnum:
-                self.defaultString = enum.GetDefaultValueString(self.defaultString)
-
+                self.defaultString = self.enum.GetDefaultValueString(self.defaultString)
     def ConstructEnumTypeName(self, opName = '', argName = ''):
         a = opName[0].upper()
         # format ArgName so instead of act_type it returns ActType
@@ -88,13 +89,39 @@ class Op:
     def __init__(self, name = '', description = '', args = []):
         self.name = name
         self.description = description
-        self.args = args
+        # reorder arguments, put those with default value to the end
+        orderedArgs = []
+        for arg in args:
+            if not arg.hasDefault:
+                orderedArgs.append(arg)
+        for arg in args:
+            if arg.hasDefault:
+                orderedArgs.append(arg)
+        self.args = orderedArgs
     def GetOpDefinitionString(self, indent=0):
-        # define enums if any
-        # create function header
+        ret = ''
         indentStr = ' ' * indent
-        ret = indentStr + 'Symbol %s(' % self.name
-        argIndentStr = ' ' * len(ret)
+        # define enums if any
+        for arg in self.args:
+            if arg.isEnum:
+                # comments
+                pattern = ("/*! \\brief %s*/\n")
+                ret = ret + indentStr + (pattern % arg.description)
+                # definition
+                ret = ret + arg.enum.GetDefinitionString(indent) + '\n'
+        # create function comments
+        pattern = ("/*!\n"
+                   " * \\brief %s\n")
+        ret = ret + pattern % self.description
+        for arg in self.args:
+            line = " * \\param %s %s\n" % (arg.name, arg.description)
+            ret = ret + line
+        ret = ret + " * \\return new symbol\n"
+        ret = ret + " */\n"
+        # create function header
+        declFirstLine = indentStr + 'Symbol %s(' % self.name
+        ret = ret + declFirstLine
+        argIndentStr = ' ' * len(declFirstLine)
         if len(self.args) != 0:
             ret = ret + self.GetArgString(self.args[0])
         for i in range(1, len(self.args)):
@@ -103,12 +130,23 @@ class Op:
         ret = ret + ') {\n'
         # create function body
         # if there is enum, generate static enum<->string mapping
+        for arg in self.args:
+            if arg.isEnum:
+                ret = ret + arg.enum.GetEnumStringArray(indent + 2)
+        # now generate code
+        ret = ret + indentStr + '  return Operator(\"%s\")\n' % self.name
+        for arg in self.args:
+            v = arg.name
+            if arg.isEnum:
+                v = arg.enum.GetConvertEnumVariableToString(v)
+            ret = ret + indentStr + ' ' * 11 + \
+                '.SetParam(\"%s\", %s)\n' % (arg.name, v)
         ret = ret + indentStr + '}\n'
         return ret
     def GetArgString(self, arg):
         ret = '%s %s' % (arg.type, arg.name)
         if arg.hasDefault:
-            ret = ret + '=' + arg.defaultString
+            ret = ret + ' = ' + arg.defaultString
         return ret
 
 def ParseAllOps():
@@ -140,6 +178,7 @@ def ParseAllOps():
     nOps = c_int()
     opHandlers = POINTER(c_void_p)()
     r = ListOP(byref(nOps), byref(opHandlers))
+    ret = ''
     for i in range(0, nOps.value):
         handler = opHandlers[i]
         name = c_char_p()
@@ -152,7 +191,7 @@ def ParseAllOps():
         GetOpInfo(handler, byref(name), byref(description), \
             byref(nArgs), byref(argNames), byref(argTypes), \
             byref(argDescs), byref(varArgName))
-        if name.value.decode()[0]=='_':
+        if name.value.decode()[0]=='_':     # get rid of functions like __init__
             continue
         args = []
         for i in range(0, nArgs.value):
@@ -162,7 +201,8 @@ def ParseAllOps():
                       argDescs[i].decode())
             args.append(arg)
         op = Op(name.value.decode(), description.value.decode(), args)
-        print(op.GetOpDefinitionString())
+        ret = ret + op.GetOpDefinitionString() + "\n"
+    return ret
 
 if __name__ == "__main__":
     #et = EnumType(typeName = 'MyET')
@@ -180,5 +220,19 @@ if __name__ == "__main__":
     #if arg.hasDefault:
     #    decl = decl + "=" + arg.defaultString
     #print(decl)
-    ParseAllOps()
+
+    # generate file header
+    patternStr = ("#ifndef _MXNETOP_H\n"
+                 "#define _MXNETOP_H\n"
+                 "\n"
+                 "#include \"MxNetCpp.h\""
+                 "\n"
+                 "namespace mxnet {\n"
+                 "namespace cpp {\n"
+                 "\n"
+                 "%s"
+                 "} //namespace cpp\n"
+                 "} //namespace mxnet\n")
+    with open('../../../include/MxNetOp.h', 'w') as f:
+        f.write(patternStr % ParseAllOps())
     pass
