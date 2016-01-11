@@ -46,7 +46,8 @@ class Arg:
         'Symbol':'Symbol',\
         'float':'mx_float',\
         'int':'int',\
-        'long':'int64_t'}
+        'long':'int64_t',\
+        'string':'const std::string&'}
     name = ''
     type = ''
     description = ''
@@ -89,6 +90,12 @@ class Op:
     def __init__(self, name = '', description = '', args = []):
         self.name = name
         self.description = description
+        # add a 'name' argument
+        nameArg = Arg(self.name, \
+                      'symbol_name', \
+                      'string', \
+                      'name of the resulting symbol')
+        args.insert(0, nameArg)
         # reorder arguments, put those with default value to the end
         orderedArgs = []
         for arg in args:
@@ -143,7 +150,7 @@ class Op:
                                         '/*!\n * \\breif ', \
                                         ' *        ')
         for arg in self.args:
-            ret = ret + self.GenDescription(arg.description, \
+            ret = ret + self.GenDescription(arg.name + ' ' + arg.description, \
                                         ' * \\param ', \
                                         ' *        ')
         ret = ret + " * \\return new symbol\n"
@@ -165,12 +172,25 @@ class Op:
                 ret = ret + arg.enum.GetEnumStringArray(indent + 2)
         # now generate code
         ret = ret + indentStr + '  return Operator(\"%s\")\n' % self.name
-        for arg in self.args:
+        for arg in self.args:   # set params
+            if arg.type == 'Symbol':
+                continue
             v = arg.name
             if arg.isEnum:
                 v = arg.enum.GetConvertEnumVariableToString(v)
             ret = ret + indentStr + ' ' * 11 + \
                 '.SetParam(\"%s\", %s)\n' % (arg.name, v)
+        ret = ret[:-1]  # get rid of the last \n
+        symbols = ''
+        for arg in self.args:   # set inputs
+            if arg.type != 'Symbol':
+                continue
+            if symbols != '':
+                symbols = symbols + ', '
+            symbols = symbols + arg.name
+        ret = ret + '(%s)\n' % symbols
+        ret = ret + indentStr + ' ' * 11 + \
+            '.CreateSymbol(symbol_name);\n'
         ret = ret + indentStr + '}\n'
         return ret
     def GetArgString(self, arg):
@@ -255,7 +275,8 @@ if __name__ == "__main__":
     patternStr = ("#ifndef _MXNETOP_H\n"
                  "#define _MXNETOP_H\n"
                  "\n"
-                 "#include \"MxNetCpp.h\""
+                 "#include <string>\n"
+                 "#include \"MxNetCpp.h\"\n"
                  "\n"
                  "namespace mxnet {\n"
                  "namespace cpp {\n"
