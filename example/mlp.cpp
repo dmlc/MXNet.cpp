@@ -4,7 +4,9 @@
 
 #include <iostream>
 #include <vector>
+#include <mxnet/ndarray.h>
 #include "MxNetCpp.h"
+#include "MxNetOp.h"
 
 using namespace std;
 using namespace mxnet::cpp;
@@ -33,9 +35,15 @@ void OutputAccuracy(mxnet::real_t* pred, mxnet::real_t* target) {
 
 void MLP() {
   auto sym_x = Symbol::Variable("X");
+  auto sym_w1 = Symbol::Variable("W1");
+  auto sym_b1 = Symbol::Variable("B1");
+#if 1
   auto sym_fc_1 = Operator("FullyConnected")
                       .SetParam("num_hidden", 512)(sym_x)
                       .CreateSymbol("fc1");
+#else
+  Symbol sym_fc_1 = FullyConnected("fc1", sym_x, sym_w1, sym_b1, 512);
+#endif
   auto sym_act_1 = Operator("LeakyReLU")
                        .SetParam("act_type", "leaky")(sym_fc_1)
                        .CreateSymbol("act_1");
@@ -48,7 +56,7 @@ void MLP() {
   auto sym_out = Operator("SoftmaxOutput")(sym_act_2).CreateSymbol("softmax");
 
   Context ctx_cpu(DeviceType::kCPU, 0);
-  Context ctx_dev(DeviceType::kGPU, 0);
+  Context ctx_dev(DeviceType::kCPU, 0);
 
   NDArray array_x(mshadow::Shape2(128, 28), ctx_dev, false);
   NDArray array_y(mshadow::Shape1(128), ctx_dev, false);

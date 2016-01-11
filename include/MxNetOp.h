@@ -2,6 +2,7 @@
 #define _MXNETOP_H
 
 #include <string>
+#include "mxnet/base.h"
 #include "MxNetCpp.h"
 
 namespace mxnet {
@@ -13,10 +14,9 @@ namespace cpp {
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol abs(const std::string& symbol_name,
-           Symbol src) {
-  return Operator("abs")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol abs(const std::string& symbol_name,
+                  Symbol src) {
+  return Operator("abs")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -26,10 +26,9 @@ Symbol abs(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol sign(const std::string& symbol_name,
-            Symbol src) {
-  return Operator("sign")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol sign(const std::string& symbol_name,
+                   Symbol src) {
+  return Operator("sign")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -39,10 +38,9 @@ Symbol sign(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol round(const std::string& symbol_name,
-             Symbol src) {
-  return Operator("round")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol round(const std::string& symbol_name,
+                    Symbol src) {
+  return Operator("round")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -52,10 +50,9 @@ Symbol round(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol ceil(const std::string& symbol_name,
-            Symbol src) {
-  return Operator("ceil")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol ceil(const std::string& symbol_name,
+                   Symbol src) {
+  return Operator("ceil")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -65,10 +62,9 @@ Symbol ceil(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol floor(const std::string& symbol_name,
-             Symbol src) {
-  return Operator("floor")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol floor(const std::string& symbol_name,
+                    Symbol src) {
+  return Operator("floor")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -78,10 +74,9 @@ Symbol floor(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol square(const std::string& symbol_name,
-              Symbol src) {
-  return Operator("square")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol square(const std::string& symbol_name,
+                     Symbol src) {
+  return Operator("square")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -91,10 +86,9 @@ Symbol square(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol sqrt(const std::string& symbol_name,
-            Symbol src) {
-  return Operator("sqrt")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol sqrt(const std::string& symbol_name,
+                   Symbol src) {
+  return Operator("sqrt")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -104,10 +98,9 @@ Symbol sqrt(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol rsqrt(const std::string& symbol_name,
-             Symbol src) {
-  return Operator("rsqrt")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol rsqrt(const std::string& symbol_name,
+                    Symbol src) {
+  return Operator("rsqrt")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -117,10 +110,9 @@ Symbol rsqrt(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol exp(const std::string& symbol_name,
-           Symbol src) {
-  return Operator("exp")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol exp(const std::string& symbol_name,
+                  Symbol src) {
+  return Operator("exp")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -130,10 +122,9 @@ Symbol exp(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol log(const std::string& symbol_name,
-           Symbol src) {
-  return Operator("log")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol log(const std::string& symbol_name,
+                  Symbol src) {
+  return Operator("log")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -143,10 +134,9 @@ Symbol log(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol cos(const std::string& symbol_name,
-           Symbol src) {
-  return Operator("cos")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol cos(const std::string& symbol_name,
+                  Symbol src) {
+  return Operator("cos")(src)
            .CreateSymbol(symbol_name);
 }
 
@@ -156,18 +146,15 @@ Symbol cos(const std::string& symbol_name,
  * \param src Source symbolic input to the function.
  * \return new symbol
  */
-Symbol sin(const std::string& symbol_name,
-           Symbol src) {
-  return Operator("sin")
-           .SetParam("symbol_name", symbol_name)(src)
+inline Symbol sin(const std::string& symbol_name,
+                  Symbol src) {
+  return Operator("sin")(src)
            .CreateSymbol(symbol_name);
 }
 
-/*! \breif Apply activation function to input.
- *        Softmax Activation is only available with CUDNN on GPUand will be
- *        computed at each location across channel if input is 4D.
+/*! \breif Activation function to be applied. 
  */
-enum ActivationActType {
+enum class ActivationActType {
   relu = 0,
   sigmoid = 1,
   softrelu = 2,
@@ -183,9 +170,9 @@ enum ActivationActType {
  * \param act_type Activation function to be applied. 
  * \return new symbol
  */
-Symbol Activation(const std::string& symbol_name,
-                  Symbol data,
-                  ActivationActType act_type) {
+inline Symbol Activation(const std::string& symbol_name,
+                         Symbol data,
+                         ActivationActType act_type) {
   static const char *ActivationActTypeValues[] = {
     "relu",
     "sigmoid",
@@ -193,7 +180,6 @@ Symbol Activation(const std::string& symbol_name,
     "tanh"
   };
   return Operator("Activation")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("act_type", ActivationActTypeValues[int(act_type)])(data)
            .CreateSymbol(symbol_name);
 }
@@ -207,13 +193,12 @@ Symbol Activation(const std::string& symbol_name,
  * \param fix_gamma Fix gamma while training.
  * \return new symbol
  */
-Symbol BatchNorm(const std::string& symbol_name,
-                 Symbol data,
-                 mx_float eps = 0.001,
-                 mx_float momentum = 0.9,
-                 bool fix_gamma = True) {
+inline Symbol BatchNorm(const std::string& symbol_name,
+                        Symbol data,
+                        mx_float eps = 0.001,
+                        mx_float momentum = 0.9,
+                        bool fix_gamma = true) {
   return Operator("BatchNorm")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("eps", eps)
            .SetParam("momentum", momentum)
            .SetParam("fix_gamma", fix_gamma)(data)
@@ -226,10 +211,9 @@ Symbol BatchNorm(const std::string& symbol_name,
  * \param data Input data. 
  * \return new symbol
  */
-Symbol BlockGrad(const std::string& symbol_name,
-                 Symbol data) {
-  return Operator("BlockGrad")
-           .SetParam("symbol_name", symbol_name)(data)
+inline Symbol BlockGrad(const std::string& symbol_name,
+                        Symbol data) {
+  return Operator("BlockGrad")(data)
            .CreateSymbol(symbol_name);
 }
 
@@ -240,11 +224,10 @@ Symbol BlockGrad(const std::string& symbol_name,
  * \param dim the dimension to be concated. 
  * \return new symbol
  */
-Symbol Concat(const std::string& symbol_name,
-              int num_args,
-              int dim = 1) {
+inline Symbol Concat(const std::string& symbol_name,
+                     int num_args,
+                     int dim = 1) {
   return Operator("Concat")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("num_args", num_args)
            .SetParam("dim", dim)()
            .CreateSymbol(symbol_name);
@@ -268,20 +251,19 @@ Symbol Concat(const std::string& symbol_name,
  * \param no_bias Whether to disable bias parameter. 
  * \return new symbol
  */
-Symbol Convolution(const std::string& symbol_name,
-                   Symbol data,
-                   Symbol weight,
-                   Symbol bias,
-                   Shape kernel,
-                   int num_filter,
-                   Shape stride = (1, 1),
-                   Shape dilate = (1, 1),
-                   Shape pad = (0, 0),
-                   int num_group = 1,
-                   int64_t workspace = 512,
-                   bool no_bias = False) {
+inline Symbol Convolution(const std::string& symbol_name,
+                          Symbol data,
+                          Symbol weight,
+                          Symbol bias,
+                          mxnet::TShape kernel,
+                          int num_filter,
+                          mxnet::TShape stride = mshadow::Shape2(1, 1),
+                          mxnet::TShape dilate = mshadow::Shape2(1, 1),
+                          mxnet::TShape pad = mshadow::Shape2(0, 0),
+                          int num_group = 1,
+                          int64_t workspace = 512,
+                          bool no_bias = false) {
   return Operator("Convolution")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("kernel", kernel)
            .SetParam("num_filter", num_filter)
            .SetParam("stride", stride)
@@ -306,13 +288,12 @@ Symbol Convolution(const std::string& symbol_name,
  *        will crop using the shape of crop_like
  * \return new symbol
  */
-Symbol Crop(const std::string& symbol_name,
-            int num_args,
-            Shape offset = (0, 0),
-            Shape h_w = (0, 0),
-            bool center_crop = False) {
+inline Symbol Crop(const std::string& symbol_name,
+                   int num_args,
+                   mxnet::TShape offset = mshadow::Shape2(0, 0),
+                   mxnet::TShape h_w = mshadow::Shape2(0, 0),
+                   bool center_crop = false) {
   return Operator("Crop")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("num_args", num_args)
            .SetParam("offset", offset)
            .SetParam("h_w", h_w)
@@ -335,19 +316,18 @@ Symbol Crop(const std::string& symbol_name,
  * \param no_bias Whether to disable bias parameter. 
  * \return new symbol
  */
-Symbol Deconvolution(const std::string& symbol_name,
-                     Symbol data,
-                     Symbol weight,
-                     Symbol bias,
-                     Shape kernel,
-                     int num_filter,
-                     Shape stride = (1, 1),
-                     Shape pad = (0, 0),
-                     int num_group = 1,
-                     int64_t workspace = 512,
-                     bool no_bias = True) {
+inline Symbol Deconvolution(const std::string& symbol_name,
+                            Symbol data,
+                            Symbol weight,
+                            Symbol bias,
+                            mxnet::TShape kernel,
+                            int num_filter,
+                            mxnet::TShape stride = mshadow::Shape2(1, 1),
+                            mxnet::TShape pad = mshadow::Shape2(0, 0),
+                            int num_group = 1,
+                            int64_t workspace = 512,
+                            bool no_bias = true) {
   return Operator("Deconvolution")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("kernel", kernel)
            .SetParam("num_filter", num_filter)
            .SetParam("stride", stride)
@@ -365,11 +345,10 @@ Symbol Deconvolution(const std::string& symbol_name,
  * \param p Fraction of the input that gets dropped out at training time.
  * \return new symbol
  */
-Symbol Dropout(const std::string& symbol_name,
-               Symbol data,
-               mx_float p = 0.5) {
+inline Symbol Dropout(const std::string& symbol_name,
+                      Symbol data,
+                      mx_float p = 0.5) {
   return Operator("Dropout")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("p", p)(data)
            .CreateSymbol(symbol_name);
 }
@@ -380,10 +359,9 @@ Symbol Dropout(const std::string& symbol_name,
  * \param num_args Number of inputs to be sumed. 
  * \return new symbol
  */
-Symbol ElementWiseSum(const std::string& symbol_name,
-                      int num_args) {
+inline Symbol ElementWiseSum(const std::string& symbol_name,
+                             int num_args) {
   return Operator("ElementWiseSum")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("num_args", num_args)()
            .CreateSymbol(symbol_name);
 }
@@ -397,13 +375,12 @@ Symbol ElementWiseSum(const std::string& symbol_name,
  * \param output_dim output dim of embedding.
  * \return new symbol
  */
-Symbol Embedding(const std::string& symbol_name,
-                 Symbol data,
-                 Symbol weight,
-                 int input_dim,
-                 int output_dim) {
+inline Symbol Embedding(const std::string& symbol_name,
+                        Symbol data,
+                        Symbol weight,
+                        int input_dim,
+                        int output_dim) {
   return Operator("Embedding")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("input_dim", input_dim)
            .SetParam("output_dim", output_dim)(data, weight)
            .CreateSymbol(symbol_name);
@@ -419,14 +396,13 @@ Symbol Embedding(const std::string& symbol_name,
  * \param no_bias Whether to disable bias parameter. 
  * \return new symbol
  */
-Symbol FullyConnected(const std::string& symbol_name,
-                      Symbol data,
-                      Symbol weight,
-                      Symbol bias,
-                      int num_hidden,
-                      bool no_bias = False) {
+inline Symbol FullyConnected(const std::string& symbol_name,
+                             Symbol data,
+                             Symbol weight,
+                             Symbol bias,
+                             int num_hidden,
+                             bool no_bias = false) {
   return Operator("FullyConnected")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("num_hidden", num_hidden)
            .SetParam("no_bias", no_bias)(data, weight, bias)
            .CreateSymbol(symbol_name);
@@ -441,22 +417,21 @@ Symbol FullyConnected(const std::string& symbol_name,
  * \param momentum The momentum for running average.
  * \return new symbol
  */
-Symbol IdentityAttachKLSparseReg(const std::string& symbol_name,
-                                 Symbol data,
-                                 mx_float sparseness_target = 0.1,
-                                 mx_float penalty = 0.001,
-                                 mx_float momentum = 0.9) {
+inline Symbol IdentityAttachKLSparseReg(const std::string& symbol_name,
+                                        Symbol data,
+                                        mx_float sparseness_target = 0.1,
+                                        mx_float penalty = 0.001,
+                                        mx_float momentum = 0.9) {
   return Operator("IdentityAttachKLSparseReg")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("sparseness_target", sparseness_target)
            .SetParam("penalty", penalty)
            .SetParam("momentum", momentum)(data)
            .CreateSymbol(symbol_name);
 }
 
-/*! \breif Apply activation function to input. 
+/*! \breif Activation function to be applied. 
  */
-enum LeakyReLUActType {
+enum class LeakyReLUActType {
   elu = 0,
   leaky = 1,
   prelu = 2,
@@ -476,12 +451,12 @@ enum LeakyReLUActType {
  *        (For rrelu only)
  * \return new symbol
  */
-Symbol LeakyReLU(const std::string& symbol_name,
-                 Symbol data,
-                 LeakyReLUActType act_type = LeakyReLUActType::leaky,
-                 mx_float slope = 0.25,
-                 mx_float lower_bound = 0.125,
-                 mx_float upper_bound = 0.334) {
+inline Symbol LeakyReLU(const std::string& symbol_name,
+                        Symbol data,
+                        LeakyReLUActType act_type = LeakyReLUActType::leaky,
+                        mx_float slope = 0.25,
+                        mx_float lower_bound = 0.125,
+                        mx_float upper_bound = 0.334) {
   static const char *LeakyReLUActTypeValues[] = {
     "elu",
     "leaky",
@@ -489,7 +464,6 @@ Symbol LeakyReLU(const std::string& symbol_name,
     "rrelu"
   };
   return Operator("LeakyReLU")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("act_type", LeakyReLUActTypeValues[int(act_type)])
            .SetParam("slope", slope)
            .SetParam("lower_bound", lower_bound)
@@ -508,14 +482,13 @@ Symbol LeakyReLU(const std::string& symbol_name,
  * \param knorm value of the k parameter in normalization formula.
  * \return new symbol
  */
-Symbol LRN(const std::string& symbol_name,
-           Symbol data,
-           int nsize,
-           mx_float alpha = 0.0001,
-           mx_float beta = 0.75,
-           mx_float knorm = 2) {
+inline Symbol LRN(const std::string& symbol_name,
+                  Symbol data,
+                  int nsize,
+                  mx_float alpha = 0.0001,
+                  mx_float beta = 0.75,
+                  mx_float knorm = 2) {
   return Operator("LRN")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("nsize", nsize)
            .SetParam("alpha", alpha)
            .SetParam("beta", beta)
@@ -523,9 +496,9 @@ Symbol LRN(const std::string& symbol_name,
            .CreateSymbol(symbol_name);
 }
 
-/*! \breif Perform spatial pooling on inputs. 
+/*! \breif Pooling type to be applied. 
  */
-enum PoolingPoolType {
+enum class PoolingPoolType {
   avg = 0,
   max = 1,
   sum = 2
@@ -541,19 +514,18 @@ enum PoolingPoolType {
  * \param pad pad for pooling: (y, x).
  * \return new symbol
  */
-Symbol Pooling(const std::string& symbol_name,
-               Symbol data,
-               Shape kernel,
-               PoolingPoolType pool_type,
-               Shape stride = (1, 1),
-               Shape pad = (0, 0)) {
+inline Symbol Pooling(const std::string& symbol_name,
+                      Symbol data,
+                      mxnet::TShape kernel,
+                      PoolingPoolType pool_type,
+                      mxnet::TShape stride = mshadow::Shape2(1, 1),
+                      mxnet::TShape pad = mshadow::Shape2(0, 0)) {
   static const char *PoolingPoolTypeValues[] = {
     "avg",
     "max",
     "sum"
   };
   return Operator("Pooling")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("kernel", kernel)
            .SetParam("pool_type", PoolingPoolTypeValues[int(pool_type)])
            .SetParam("stride", stride)
@@ -569,12 +541,11 @@ Symbol Pooling(const std::string& symbol_name,
  * \param grad_scale Scale the gradient by a float factor.
  * \return new symbol
  */
-Symbol LinearRegressionOutput(const std::string& symbol_name,
-                              Symbol data,
-                              Symbol label,
-                              mx_float grad_scale = 1) {
+inline Symbol LinearRegressionOutput(const std::string& symbol_name,
+                                     Symbol data,
+                                     Symbol label,
+                                     mx_float grad_scale = 1) {
   return Operator("LinearRegressionOutput")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("grad_scale", grad_scale)(data, label)
            .CreateSymbol(symbol_name);
 }
@@ -588,12 +559,11 @@ Symbol LinearRegressionOutput(const std::string& symbol_name,
  * \param grad_scale Scale the gradient by a float factor.
  * \return new symbol
  */
-Symbol MAERegressionOutput(const std::string& symbol_name,
-                           Symbol data,
-                           Symbol label,
-                           mx_float grad_scale = 1) {
+inline Symbol MAERegressionOutput(const std::string& symbol_name,
+                                  Symbol data,
+                                  Symbol label,
+                                  mx_float grad_scale = 1) {
   return Operator("MAERegressionOutput")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("grad_scale", grad_scale)(data, label)
            .CreateSymbol(symbol_name);
 }
@@ -608,12 +578,11 @@ Symbol MAERegressionOutput(const std::string& symbol_name,
  * \param grad_scale Scale the gradient by a float factor.
  * \return new symbol
  */
-Symbol LogisticRegressionOutput(const std::string& symbol_name,
-                                Symbol data,
-                                Symbol label,
-                                mx_float grad_scale = 1) {
+inline Symbol LogisticRegressionOutput(const std::string& symbol_name,
+                                       Symbol data,
+                                       Symbol label,
+                                       mx_float grad_scale = 1) {
   return Operator("LogisticRegressionOutput")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("grad_scale", grad_scale)(data, label)
            .CreateSymbol(symbol_name);
 }
@@ -627,11 +596,10 @@ Symbol LogisticRegressionOutput(const std::string& symbol_name,
  *        the rest of dims
  * \return new symbol
  */
-Symbol Reshape(const std::string& symbol_name,
-               Symbol data,
-               Shape target_shape) {
+inline Symbol Reshape(const std::string& symbol_name,
+                      Symbol data,
+                      mxnet::TShape target_shape) {
   return Operator("Reshape")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("target_shape", target_shape)(data)
            .CreateSymbol(symbol_name);
 }
@@ -642,10 +610,9 @@ Symbol Reshape(const std::string& symbol_name,
  * \param data Input data to  flatten. 
  * \return new symbol
  */
-Symbol Flatten(const std::string& symbol_name,
-               Symbol data) {
-  return Operator("Flatten")
-           .SetParam("symbol_name", symbol_name)(data)
+inline Symbol Flatten(const std::string& symbol_name,
+                      Symbol data) {
+  return Operator("Flatten")(data)
            .CreateSymbol(symbol_name);
 }
 
@@ -655,23 +622,21 @@ Symbol Flatten(const std::string& symbol_name,
  * \param num_outputs Number of outputs to be sliced. 
  * \return new symbol
  */
-Symbol SliceChannel(const std::string& symbol_name,
-                    int num_outputs) {
+inline Symbol SliceChannel(const std::string& symbol_name,
+                           int num_outputs) {
   return Operator("SliceChannel")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("num_outputs", num_outputs)()
            .CreateSymbol(symbol_name);
 }
 
-/*! \breif Apply softmax activation to input.
- *        This is intended for internal layers. For output (loss layer) please
- *        use SoftmaxOutput. If type=instance, this operator will compute a
- *        softmax for each instance in the batch; this is the default mode. If
- *        type=channel, this operator will compute a num_channel-class softmax
- *        at each position of each instance; this can be used for fully
- *        convolutional network, image segmentation, etc.
+/*! \breif Softmax Mode.
+ *        If set to instance, this operator will compute a softmax for each
+ *        instance in the batch; this is the default mode. If set to channel,
+ *        this operator will compute a num_channel-class softmax at each
+ *        position of each instance; this can be used for fully convolutional
+ *        network, image segmentation, etc.
  */
-enum SoftmaxActivationType {
+enum class SoftmaxActivationType {
   channel = 0,
   instance = 1
 };
@@ -694,15 +659,14 @@ enum SoftmaxActivationType {
  *        network, image segmentation, etc.
  * \return new symbol
  */
-Symbol SoftmaxActivation(const std::string& symbol_name,
-                         Symbol data,
-                         SoftmaxActivationType type = SoftmaxActivationType::instance) {
+inline Symbol SoftmaxActivation(const std::string& symbol_name,
+                                Symbol data,
+                                SoftmaxActivationType type = SoftmaxActivationType::instance) {
   static const char *SoftmaxActivationTypeValues[] = {
     "channel",
     "instance"
   };
   return Operator("SoftmaxActivation")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("type", SoftmaxActivationTypeValues[int(type)])(data)
            .CreateSymbol(symbol_name);
 }
@@ -720,14 +684,13 @@ Symbol SoftmaxActivation(const std::string& symbol_name,
  *        contributorto the backward gradient
  * \return new symbol
  */
-Symbol SoftmaxOutput(const std::string& symbol_name,
-                     Symbol data,
-                     mx_float grad_scale = 1,
-                     mx_float ignore_label = -1,
-                     bool multi_output = False,
-                     bool use_ignore = False) {
+inline Symbol SoftmaxOutput(const std::string& symbol_name,
+                            Symbol data,
+                            mx_float grad_scale = 1,
+                            mx_float ignore_label = -1,
+                            bool multi_output = false,
+                            bool use_ignore = false) {
   return Operator("SoftmaxOutput")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("grad_scale", grad_scale)
            .SetParam("ignore_label", ignore_label)
            .SetParam("multi_output", multi_output)
@@ -749,14 +712,13 @@ Symbol SoftmaxOutput(const std::string& symbol_name,
  *        contributorto the backward gradient
  * \return new symbol
  */
-Symbol Softmax(const std::string& symbol_name,
-               Symbol data,
-               mx_float grad_scale = 1,
-               mx_float ignore_label = -1,
-               bool multi_output = False,
-               bool use_ignore = False) {
+inline Symbol Softmax(const std::string& symbol_name,
+                      Symbol data,
+                      mx_float grad_scale = 1,
+                      mx_float ignore_label = -1,
+                      bool multi_output = false,
+                      bool use_ignore = false) {
   return Operator("Softmax")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("grad_scale", grad_scale)
            .SetParam("ignore_label", ignore_label)
            .SetParam("multi_output", multi_output)
@@ -772,27 +734,29 @@ Symbol Softmax(const std::string& symbol_name,
  * \param dim2 the second axis to be swapped. 
  * \return new symbol
  */
-Symbol SwapAxis(const std::string& symbol_name,
-                Symbol data,
-                int dim1 = 0,
-                int dim2 = 0) {
+inline Symbol SwapAxis(const std::string& symbol_name,
+                       Symbol data,
+                       int dim1 = 0,
+                       int dim2 = 0) {
   return Operator("SwapAxis")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("dim1", dim1)
            .SetParam("dim2", dim2)(data)
            .CreateSymbol(symbol_name);
 }
 
-/*! \breif Perform nearest neighboor/bilinear up sampling to inputs.
+/*! \breif upsampling method.
  */
-enum UpSamplingSampleType {
+enum class UpSamplingSampleType {
   bilinear = 0,
   nearest = 1
 };
 
-/*! \breif Perform nearest neighboor/bilinear up sampling to inputs.
+/*! \breif How to handle multiple input.
+ *        concat means concatenate upsampled images along the channel
+ *        dimension. sum means add all images together, only available for
+ *        nearest neighbor upsampling.
  */
-enum UpSamplingMultiInputMode {
+enum class UpSamplingMultiInputMode {
   concat = 0,
   sum = 1
 };
@@ -814,12 +778,12 @@ enum UpSamplingMultiInputMode {
  *        nearest neighbor upsampling.
  * \return new symbol
  */
-Symbol UpSampling(const std::string& symbol_name,
-                  int scale,
-                  UpSamplingSampleType sample_type,
-                  int num_args,
-                  int num_filter = 0,
-                  UpSamplingMultiInputMode multi_input_mode = UpSamplingMultiInputMode::concat) {
+inline Symbol UpSampling(const std::string& symbol_name,
+                         int scale,
+                         UpSamplingSampleType sample_type,
+                         int num_args,
+                         int num_filter = 0,
+                         UpSamplingMultiInputMode multi_input_mode = UpSamplingMultiInputMode::concat) {
   static const char *UpSamplingSampleTypeValues[] = {
     "bilinear",
     "nearest"
@@ -829,7 +793,6 @@ Symbol UpSampling(const std::string& symbol_name,
     "sum"
   };
   return Operator("UpSampling")
-           .SetParam("symbol_name", symbol_name)
            .SetParam("scale", scale)
            .SetParam("sample_type", UpSamplingSampleTypeValues[int(sample_type)])
            .SetParam("num_args", num_args)
@@ -840,3 +803,4 @@ Symbol UpSampling(const std::string& symbol_name,
 
 } //namespace cpp
 } //namespace mxnet
+#endif //ifndef _MXNETOP_H

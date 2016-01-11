@@ -185,6 +185,9 @@ class Operator {
     // PushInput(symbol);
     PushInput(t, args...);
   }
+  Operator &operator()() {
+    return *this;
+  }
   Operator &operator()(const Symbol &symbol) {
     input_values.push_back(symbol.GetHandle());
     return *this;

@@ -17,7 +17,7 @@ class EnumType:
             logging.warn("trying to parse none-enum type as enum: %s" % typeString)
     def GetDefinitionString(self, indent = 0):
         indentStr = ' ' * indent
-        ret = indentStr + 'enum %s {\n' % self.name
+        ret = indentStr + 'enum class %s {\n' % self.name
         for i in range(0, len(self.enumValues)):
             ret = ret + indentStr + '  %s = %d' % (self.enumValues[i], i)
             if (i != len(self.enumValues) -1):
@@ -42,7 +42,7 @@ class EnumType:
 
 class Arg:
     typeDict = {'boolean':'bool',\
-        'Shape(tuple)':'Shape',\
+        'Shape(tuple)':'mxnet::TShape',\
         'Symbol':'Symbol',\
         'float':'mx_float',\
         'int':'int',\
@@ -72,6 +72,13 @@ class Arg:
             self.defaultString = typeString.split('default=')[1].strip().strip("'")
             if self.isEnum:
                 self.defaultString = self.enum.GetDefaultValueString(self.defaultString)
+            elif self.defaultString == 'False':
+                self.defaultString = 'false'
+            elif self.defaultString == 'True':
+                self.defaultString = 'true'
+            elif self.defaultString[0] == '(':
+                self.defaultString = 'mshadow::Shape2' + self.defaultString
+
     def ConstructEnumTypeName(self, opName = '', argName = ''):
         a = opName[0].upper()
         # format ArgName so instead of act_type it returns ActType
@@ -139,7 +146,7 @@ class Op:
         for arg in self.args:
             if arg.isEnum:
                 # comments
-                ret = ret + self.GenDescription(self.description, \
+                ret = ret + self.GenDescription(arg.description, \
                                         '/*! \\breif ', \
                                         ' *        ')
                 ret = ret + " */\n"
@@ -156,7 +163,7 @@ class Op:
         ret = ret + " * \\return new symbol\n"
         ret = ret + " */\n"
         # create function header
-        declFirstLine = indentStr + 'Symbol %s(' % self.name
+        declFirstLine = indentStr + 'inline Symbol %s(' % self.name
         ret = ret + declFirstLine
         argIndentStr = ' ' * len(declFirstLine)
         if len(self.args) != 0:
@@ -173,7 +180,7 @@ class Op:
         # now generate code
         ret = ret + indentStr + '  return Operator(\"%s\")\n' % self.name
         for arg in self.args:   # set params
-            if arg.type == 'Symbol':
+            if arg.type == 'Symbol' or arg.type == 'const std::string&':
                 continue
             v = arg.name
             if arg.isEnum:
@@ -276,6 +283,7 @@ if __name__ == "__main__":
                  "#define _MXNETOP_H\n"
                  "\n"
                  "#include <string>\n"
+                 "#include \"mxnet/base.h\"\n"
                  "#include \"MxNetCpp.h\"\n"
                  "\n"
                  "namespace mxnet {\n"
@@ -283,7 +291,8 @@ if __name__ == "__main__":
                  "\n"
                  "%s"
                  "} //namespace cpp\n"
-                 "} //namespace mxnet\n")
+                 "} //namespace mxnet\n"
+                 "#endif //ifndef _MXNETOP_H\n")
     with open('../../../include/MxNetOp.h', 'w') as f:
         f.write(patternStr % ParseAllOps())
     pass
