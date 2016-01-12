@@ -37,7 +37,7 @@ class StaticGraph;
  *   Symbol is always composite, the head Node is the output node of the symbol.
  *   An atomic symbol can be seen as a special case of the composite symbol with only the head node.
  */
-class MXNET_API Symbol {
+class Symbol {
  public:
   /*!
    * \brief copy the symbol
@@ -262,7 +262,7 @@ class MXNET_API Symbol {
  * \brief Executor of a computation graph.
  *  Executor can be created by Binding a symbol.
  */
-class MXNET_API Executor {
+class Executor {
  public:
   /*! \brief destructor */
   virtual ~Executor() {}
@@ -321,9 +321,13 @@ class MXNET_API Executor {
                         const std::vector<OpReqType> &grad_req_type,
                         const std::vector<NDArray> &aux_states);
   /*!
+   * \brief the prototype of user-defined monitor callback
+   */
+  typedef std::function<void(const char*, void*)> MonitorCallback;
+  /*!
    * \brief Install a callback to notify the completion of operation.
    */
-  virtual void SetMonitorCallback(ExcecutorMonitorCallback callback) {}
+  virtual void SetMonitorCallback(const MonitorCallback& callback) {}
 };  // class operator
 }  // namespace mxnet
 #endif  // MXNET_SYMBOLIC_H_

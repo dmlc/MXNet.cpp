@@ -35,21 +35,6 @@ void OutputAccuracy(mxnet::real_t* pred, mxnet::real_t* target) {
 
 void MLP() {
   auto sym_x = Symbol::Variable("X");
-#if 0
-  auto sym_fc_1 = Operator("FullyConnected")
-                      .SetParam("num_hidden", 512)(sym_x)
-                      .CreateSymbol("fc1");
-  auto sym_act_1 = Operator("LeakyReLU")
-                       .SetParam("act_type", "leaky")(sym_fc_1)
-                       .CreateSymbol("act_1");
-  auto sym_fc_2 = Operator("FullyConnected")
-                      .SetParam("num_hidden", 10)(sym_act_1)
-                      .CreateSymbol("fc2");
-  auto sym_act_2 = Operator("LeakyReLU")
-                       .SetParam("act_type", "leaky")(sym_fc_2)
-                       .CreateSymbol("act_2");
-  auto sym_out = Operator("SoftmaxOutput")(sym_act_2).CreateSymbol("softmax");
-#elif 1
   auto sym_w1 = Symbol::Variable("W1");
   auto sym_b1 = Symbol::Variable("B1");
   auto sym_w2 = Symbol::Variable("W2");
@@ -57,25 +42,10 @@ void MLP() {
 
   auto sym_fc_1 = FullyConnected("fc1", sym_x, sym_w1, sym_b1, 512);
   auto sym_act_1 = LeakyReLU("act_1", sym_fc_1, LeakyReLUActType::leaky);
-  auto sym_fc_2 = FullyConnected("fc2", sym_act_1, sym_w2, sym_b2, 10);   // this line causes the error, replacing with original line fix the problem
+  auto sym_fc_2 = FullyConnected("fc2", sym_act_1, sym_w2, sym_b2, 10);
   auto sym_act_2 = LeakyReLU("act_2", sym_fc_2, LeakyReLUActType::leaky);
   auto sym_out = SoftmaxOutput("softmax", sym_act_2);
-#else
-  auto sym_w1 = Symbol::Variable("W1");
-  auto sym_b1 = Symbol::Variable("B1");
-  auto sym_w2 = Symbol::Variable("W2");
-  auto sym_b2 = Symbol::Variable("B2");
 
-  auto sym_fc_1 = FullyConnected("fc1", sym_x, sym_w1, sym_b1, 512);
-  auto sym_act_1 = LeakyReLU("act_1", sym_fc_1, LeakyReLUActType::leaky);
-  auto sym_fc_2 = Operator("FullyConnected")
-    .SetParam("num_hidden", 10)(sym_act_1)
-    .CreateSymbol("fc2");
-  auto sym_act_2 = LeakyReLU("act_2", sym_fc_2, LeakyReLUActType::leaky);
-  auto sym_out = SoftmaxOutput("softmax", sym_act_2);
-#endif
-
-  Context ctx_cpu(DeviceType::kCPU, 0);
   Context ctx_dev(DeviceType::kCPU, 0);
 
   NDArray array_x(mshadow::Shape2(128, 28), ctx_dev, false);

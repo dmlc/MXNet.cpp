@@ -293,6 +293,6 @@ if __name__ == "__main__":
                  "} //namespace cpp\n"
                  "} //namespace mxnet\n"
                  "#endif //ifndef _MXNETOP_H\n")
-    with open('../../../include/MxNetOp.h', 'w') as f:
+    with open('../../include/MxNetOp.h', 'w') as f:
         f.write(patternStr % ParseAllOps())
     pass

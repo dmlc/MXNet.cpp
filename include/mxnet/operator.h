@@ -162,7 +162,7 @@ class Operator {
  * It also contains various functions that can be optimally overriden to
  * provide optimization chance for computation engine.
  */
-class MXNET_API OperatorProperty {
+class OperatorProperty {
  public:
   /*!
    * \brief virtual destructor
