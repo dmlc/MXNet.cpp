@@ -194,11 +194,14 @@ class Operator {
   }
   Operator &operator()(const Symbol &symbol1, const Symbol &symbol2) {
     input_values.push_back(symbol1.GetHandle());
+    input_values.push_back(symbol2.GetHandle());
     return *this;
   }
   Operator &operator()(const Symbol &symbol1, const Symbol &symbol2,
                        const Symbol &symbol3) {
+    input_values.push_back(symbol1.GetHandle());
     input_values.push_back(symbol2.GetHandle());
+    input_values.push_back(symbol3.GetHandle());
     return *this;
   }
   template <typename T, typename... Args>
