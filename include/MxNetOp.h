@@ -801,6 +801,7 @@ enum class UpSamplingMultiInputMode {
 /*!
  * \breif Perform nearest neighboor/bilinear up sampling to inputs.
  * \param symbol_name name of the resulting symbol.
+ * \param data Array of tensors to upsample.
  * \param scale Up sampling scale.
  * \param sample_type upsampling method.
  * \param num_args Number of inputs to be upsampled.
@@ -816,6 +817,7 @@ enum class UpSamplingMultiInputMode {
  * \return new symbol
  */
 inline Symbol UpSampling(const std::string& symbol_name,
+                         const std::vector<Symbol>& data,
                          int scale,
                          UpSamplingSampleType sample_type,
                          int num_args,
@@ -834,7 +836,7 @@ inline Symbol UpSampling(const std::string& symbol_name,
            .SetParam("sample_type", UpSamplingSampleTypeValues[int(sample_type)])
            .SetParam("num_args", num_args)
            .SetParam("num_filter", num_filter)
-           .SetParam("multi_input_mode", UpSamplingMultiInputModeValues[int(multi_input_mode)])()
+           .SetParam("multi_input_mode", UpSamplingMultiInputModeValues[int(multi_input_mode)])(data)
            .CreateSymbol(symbol_name);
 }
 
