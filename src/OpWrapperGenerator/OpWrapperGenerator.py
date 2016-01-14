@@ -1,4 +1,4 @@
-from ctypes import *
+﻿from ctypes import *
 import logging
 
 class EnumType:
@@ -44,6 +44,7 @@ class Arg:
     typeDict = {'boolean':'bool',\
         'Shape(tuple)':'mxnet::TShape',\
         'Symbol':'Symbol',\
+        'Symbol[]':'const std::vector<Symbol>&',\
         'float':'mx_float',\
         'int':'int',\
         'long':'int64_t',\
@@ -180,7 +181,9 @@ class Op:
         # now generate code
         ret = ret + indentStr + '  return Operator(\"%s\")\n' % self.name
         for arg in self.args:   # set params
-            if arg.type == 'Symbol' or arg.type == 'const std::string&':
+            if arg.type == 'Symbol' or \
+                arg.type == 'const std::string&' or \
+                arg.type == 'const std::vector<Symbol>&':
                 continue
             v = arg.name
             if arg.isEnum:
@@ -189,12 +192,21 @@ class Op:
                 '.SetParam(\"%s\", %s)\n' % (arg.name, v)
         ret = ret[:-1]  # get rid of the last \n
         symbols = ''
+        inputAlreadySet = False
         for arg in self.args:   # set inputs
             if arg.type != 'Symbol':
                 continue
+            inputAlreadySet = True
             if symbols != '':
                 symbols = symbols + ', '
             symbols = symbols + arg.name
+        for arg in self.args:   # set input arrays vector<Symbol>
+            if arg.type != 'const std::vector<Symbol>&':
+                continue
+            if (inputAlreadySet):
+                logging.error("op %s has both Symbol[] and Symbol inputs!" % self.name)
+            inputAlreadySet = True
+            symbols = arg.name
         ret = ret + '(%s)\n' % symbols
         ret = ret + indentStr + ' ' * 11 + \
             '.CreateSymbol(symbol_name);\n'
@@ -283,6 +295,7 @@ if __name__ == "__main__":
                  "#define _MXNETOP_H\n"
                  "\n"
                  "#include <string>\n"
+                 "#include <vector>\n"
                  "#include \"mxnet/base.h\"\n"
                  "#include \"MxNetCpp.h\"\n"
                  "\n"
