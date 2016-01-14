@@ -2,6 +2,7 @@
 #define _MXNETOP_H
 
 #include <string>
+#include <vector>
 #include "mxnet/base.h"
 #include "MxNetCpp.h"
 
@@ -217,19 +218,53 @@ inline Symbol BlockGrad(const std::string& symbol_name,
            .CreateSymbol(symbol_name);
 }
 
+/*! \breif Target data type. 
+ */
+enum class CastDtype {
+  float16 = 0,
+  float32 = 1,
+  float64 = 2,
+  int32 = 3,
+  uint8 = 4
+};
+
+/*!
+ * \breif Cast array to a different data type. 
+ * \param symbol_name name of the resulting symbol.
+ * \param data Input data to cast function. 
+ * \param dtype Target data type. 
+ * \return new symbol
+ */
+inline Symbol Cast(const std::string& symbol_name,
+                   Symbol data,
+                   CastDtype dtype) {
+  static const char *CastDtypeValues[] = {
+    "float16",
+    "float32",
+    "float64",
+    "int32",
+    "uint8"
+  };
+  return Operator("Cast")
+           .SetParam("dtype", CastDtypeValues[int(dtype)])(data)
+           .CreateSymbol(symbol_name);
+}
+
 /*!
  * \breif Perform an feature concat on channel dim (dim 1) over all the inputs. 
  * \param symbol_name name of the resulting symbol.
+ * \param data List of tensors to concatenate.
  * \param num_args Number of inputs to be concated. 
  * \param dim the dimension to be concated. 
  * \return new symbol
  */
 inline Symbol Concat(const std::string& symbol_name,
+                     const std::vector<Symbol>& data,
                      int num_args,
                      int dim = 1) {
   return Operator("Concat")
            .SetParam("num_args", num_args)
-           .SetParam("dim", dim)()
+           .SetParam("dim", dim)(data)
            .CreateSymbol(symbol_name);
 }
 
@@ -675,6 +710,7 @@ inline Symbol SoftmaxActivation(const std::string& symbol_name,
  * \breif Perform a softmax transformation on input, backprop with logloss. 
  * \param symbol_name name of the resulting symbol.
  * \param data Input data to softmax. 
+ * \param label Label data. 
  * \param grad_scale Scale the gradient by a float factor.
  * \param ignore_label the ignore_label will not work in backward, and this
  *        onlybe used when multi_output=true
@@ -686,6 +722,7 @@ inline Symbol SoftmaxActivation(const std::string& symbol_name,
  */
 inline Symbol SoftmaxOutput(const std::string& symbol_name,
                             Symbol data,
+                            Symbol label,
                             mx_float grad_scale = 1,
                             mx_float ignore_label = -1,
                             bool multi_output = false,
@@ -694,7 +731,7 @@ inline Symbol SoftmaxOutput(const std::string& symbol_name,
            .SetParam("grad_scale", grad_scale)
            .SetParam("ignore_label", ignore_label)
            .SetParam("multi_output", multi_output)
-           .SetParam("use_ignore", use_ignore)(data)
+           .SetParam("use_ignore", use_ignore)(data, label)
            .CreateSymbol(symbol_name);
 }
 

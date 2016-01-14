@@ -204,6 +204,12 @@ class Operator {
     input_values.push_back(symbol3.GetHandle());
     return *this;
   }
+  Operator &operator()(const std::vector<Symbol> & symbols) {
+    for (auto & s : symbols) {
+      input_values.push_back(s.GetHandle());
+    }
+    return *this;
+  }
   template <typename T, typename... Args>
   Operator &operator()(const Symbol &symbol, const T &t, Args... args) {
     PushInput(symbol, t, args...);
