@@ -1,8 +1,16 @@
 /*!
- * Copyright (c) 2015 by Contributors
+ *  Copyright (c) 2016 by Contributors
+ * \file ndarray.hpp
+ * \brief implementation of the ndarray
+ * \author Zhang Chen
  */
+
+#ifndef NDARRAY_HPP_QJLSKOCA
+#define NDARRAY_HPP_QJLSKOCA
+
 #include <vector>
 #include "MxNetCpp.h"
+
 namespace mxnet {
 namespace cpp {
 NDArray::NDArray() {
@@ -275,3 +283,6 @@ Context NDArray::GetContext() const {
 }
 }  // namespace cpp
 }  // namespace mxnet
+
+
+#endif /* end of include guard: NDARRAY_HPP_QJLSKOCA */

@@ -1,5 +1,8 @@
 /*!
- * Copyright (c) 2015 by Contributors
+ *  Copyright (c) 2016 by Contributors
+ * \file MxNetCpp.h
+ * \brief the main definations of MxNetCpp
+ * \author Chuntao Hong
  */
 
 #ifndef MXNETCPP_H_
@@ -126,9 +129,7 @@ class Symbol {
   Symbol Copy() const;
   static Symbol Variable(const std::string &name = "");
 
-  SymbolHandle GetHandle() const {
-    return blob_ptr_->handle_;
-  }
+  SymbolHandle GetHandle() const { return blob_ptr_->handle_; }
 
   Symbol(const std::string &operator_name, const std::string &name,
          std::vector<const char *> input_keys,
@@ -145,6 +146,20 @@ class Symbol {
   std::vector<std::string> ListArguments() const;
   std::vector<std::string> ListOutputs() const;
   std::vector<std::string> ListAuxiliaryStates() const;
+
+  void InferExecutorArrays(
+      const Context &context, std::vector<NDArray> *arg_arrays,
+      std::vector<NDArray> *grad_arrays, std::vector<OpReqType> *grad_reqs,
+      std::vector<NDArray> *aux_arrays,
+      const std::map<std::string, NDArray> &args_map,
+      const std::map<std::string, NDArray> &arg_grad_store =
+          std::map<std::string, NDArray>(),
+      const std::map<std::string, OpReqType> &grad_req_type =
+          std::map<std::string, OpReqType>()) const;
+
+  void InferArgsMap(const Context &context,
+                    std::map<std::string, NDArray> *args_map,
+                    const std::map<std::string, NDArray> &known_args) const;
 
   Executor *SimpleBind(const Context &context,
                        const std::map<std::string, NDArray> &args_map,
@@ -178,34 +193,20 @@ class Operator {
   }
   Operator &SetInput(const std::string &name, Symbol symbol);
   void PushInput(const Symbol &symbol) {
-    // input_values.push_back(symbol.GetHandle());
+    input_values.push_back(symbol.GetHandle());
   }
   template <class T, class... Args>
   void PushInput(const Symbol &symbol, const T &t, Args... args) {
-    // PushInput(symbol);
+    PushInput(symbol);
     PushInput(t, args...);
   }
-  Operator &operator()() {
-    return *this;
-  }
+  Operator &operator()() { return *this; }
   Operator &operator()(const Symbol &symbol) {
     input_values.push_back(symbol.GetHandle());
     return *this;
   }
-  Operator &operator()(const Symbol &symbol1, const Symbol &symbol2) {
-    input_values.push_back(symbol1.GetHandle());
-    input_values.push_back(symbol2.GetHandle());
-    return *this;
-  }
-  Operator &operator()(const Symbol &symbol1, const Symbol &symbol2,
-                       const Symbol &symbol3) {
-    input_values.push_back(symbol1.GetHandle());
-    input_values.push_back(symbol2.GetHandle());
-    input_values.push_back(symbol3.GetHandle());
-    return *this;
-  }
-  Operator &operator()(const std::vector<Symbol> & symbols) {
-    for (auto & s : symbols) {
+  Operator &operator()(const std::vector<Symbol> &symbols) {
+    for (auto &s : symbols) {
       input_values.push_back(s.GetHandle());
     }
     return *this;
@@ -213,7 +214,6 @@ class Operator {
   template <typename T, typename... Args>
   Operator &operator()(const Symbol &symbol, const T &t, Args... args) {
     PushInput(symbol, t, args...);
-    // PushInput(t,args...);
     return *this;
   }
   // std::string & operator[](const std::string & param_name);
@@ -304,5 +304,10 @@ class Mxnet {
 static Mxnet *MxNet = new Mxnet();
 }  // namespace cpp
 }  // namespace mxnet
+
+#include "MxNetCpp.hpp"
+#include "executor.hpp"
+#include "symbol.hpp"
+#include "ndarray.hpp"
 
 #endif  // MXNETCPP_H_

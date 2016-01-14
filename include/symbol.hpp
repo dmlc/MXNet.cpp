@@ -1,6 +1,13 @@
 /*!
- * Copyright (c) 2015 by Contributors
+ *  Copyright (c) 2016 by Contributors
+ * \file symbol.hpp
+ * \brief implementation of the symbol
+ * \author Zhang Chen
  */
+
+#ifndef SYMBOL_HPP_RUBNTUY8
+#define SYMBOL_HPP_RUBNTUY8
+
 #include <map>
 #include <string>
 #include <vector>
@@ -127,10 +134,14 @@ void Symbol::InferShape(
   }
 }
 
-Executor *Symbol::SimpleBind(
-    const Context &context, const std::map<std::string, NDArray> &args_map,
+void Symbol::InferExecutorArrays(
+    const Context &context, std::vector<NDArray> *arg_arrays,
+    std::vector<NDArray> *grad_arrays, std::vector<OpReqType> *grad_reqs,
+    std::vector<NDArray> *aux_arrays,
+    const std::map<std::string, NDArray> &args_map,
     const std::map<std::string, NDArray> &arg_grad_store,
-    const std::map<std::string, OpReqType> &grad_req_type) {
+    const std::map<std::string, OpReqType> &grad_req_type) const {
+
   const auto arg_name_list = ListArguments();
   std::vector<std::vector<mx_uint> > in_shapes, aux_shapes, out_shapes;
   std::map<std::string, std::vector<mx_uint> > arg_shapes;
@@ -144,40 +155,78 @@ Executor *Symbol::SimpleBind(
 
   InferShape(arg_shapes, &in_shapes, &aux_shapes, &out_shapes);
 
-  std::vector<NDArray> arg_arrays;
-  std::vector<NDArray> grad_arrays;
-  std::vector<OpReqType> grad_reqs;
-  std::vector<NDArray> aux_arrays;
-
   for (size_t i = 0; i < in_shapes.size(); ++i) {
     const auto &shape = in_shapes[i];
     const auto &arg_name = arg_name_list[i];
     auto iter_arg = args_map.find(arg_name);
     if (iter_arg != args_map.end()) {
-      arg_arrays.push_back(iter_arg->second);
+      arg_arrays->push_back(iter_arg->second);
     } else {
-      arg_arrays.push_back(NDArray(shape, context, false));
-      NDArray::SampleGaussian(0, 1, &arg_arrays.back());
+      arg_arrays->push_back(NDArray(shape, context, false));
+      NDArray::SampleGaussian(0, 1, &arg_arrays->back());
     }
     auto iter_grad = arg_grad_store.find(arg_name);
     if (iter_grad != arg_grad_store.end()) {
-      grad_arrays.push_back(iter_grad->second);
+      grad_arrays->push_back(iter_grad->second);
     } else {
-      grad_arrays.push_back(NDArray(shape, context, false));
+      grad_arrays->push_back(NDArray(shape, context, false));
     }
     auto iter_req = grad_req_type.find(arg_name);
     if (iter_req != grad_req_type.end()) {
-      grad_reqs.push_back(iter_req->second);
+      grad_reqs->push_back(iter_req->second);
     } else {
-      grad_reqs.push_back(OpReqType::kWriteTo);
+      grad_reqs->push_back(OpReqType::kWriteTo);
     }
   }
 
   for (const auto &shape : aux_shapes) {
-    aux_arrays.push_back(NDArray(shape, context, false));
+    aux_arrays->push_back(NDArray(shape, context, false));
   }
 
   NDArray::WaitAll();
+}
+
+void Symbol::InferArgsMap(
+    const Context &context, std::map<std::string, NDArray> *args_map,
+    const std::map<std::string, NDArray> &known_args) const {
+
+  const auto arg_name_list = ListArguments();
+  std::vector<std::vector<mx_uint> > in_shapes, aux_shapes, out_shapes;
+  std::map<std::string, std::vector<mx_uint> > arg_shapes;
+
+  for (const auto &arg_name : arg_name_list) {
+    auto iter = known_args.find(arg_name);
+    if (iter != known_args.end()) {
+      arg_shapes[arg_name] = iter->second.GetShape();
+    }
+  }
+
+  InferShape(arg_shapes, &in_shapes, &aux_shapes, &out_shapes);
+
+  for (size_t i = 0; i < in_shapes.size(); ++i) {
+    const auto &shape = in_shapes[i];
+    const auto &arg_name = arg_name_list[i];
+    auto iter_arg = known_args.find(arg_name);
+    if (iter_arg != known_args.end()) {
+      (*args_map)[arg_name] = iter_arg->second;
+    } else {
+      (*args_map)[arg_name] = NDArray(shape, context, false);
+      NDArray::SampleGaussian(0, 1, &(*args_map)[arg_name]);
+    }
+  }
+}
+
+Executor *Symbol::SimpleBind(
+    const Context &context, const std::map<std::string, NDArray> &args_map,
+    const std::map<std::string, NDArray> &arg_grad_store,
+    const std::map<std::string, OpReqType> &grad_req_type) {
+  std::vector<NDArray> arg_arrays;
+  std::vector<NDArray> grad_arrays;
+  std::vector<OpReqType> grad_reqs;
+  std::vector<NDArray> aux_arrays;
+
+  InferExecutorArrays(context, &arg_arrays, &grad_arrays, &grad_reqs,
+                      &aux_arrays, args_map, arg_grad_store, grad_req_type);
 
   return new Executor(*this, context, arg_arrays, grad_arrays, grad_reqs,
                       aux_arrays);
@@ -193,3 +242,5 @@ Executor *Symbol::Bind(const Context &context,
 }
 }  // namespace cpp
 }  // namespace mxnet
+
+#endif /* end of include guard: SYMBOL_HPP_RUBNTUY8 */
