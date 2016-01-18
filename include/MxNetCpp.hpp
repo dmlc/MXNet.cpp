@@ -1,6 +1,13 @@
 /*!
- * Copyright (c) 2015 by Contributors
+ *  Copyright (c) 2016 by Contributors
+ * \file MxNetCpp.hpp
+ * \brief implementation of Mxnet, Context, Operator, Optimizer
+ * \author Chuntao Hong, Zhang Chen
  */
+
+#ifndef MXNETCPP_HPP_C6LTBYYW
+#define MXNETCPP_HPP_C6LTBYYW
+
 #include <vector>
 #include <string>
 #include <map>
@@ -96,6 +103,7 @@ Operator &Operator::SetInput(const std::string &name, Symbol symbol) {
  * */
 Optimizer::Optimizer(const std::string &opt_type) {
   MXOptimizerFindCreator(opt_type.c_str(), &creator_);
+  init_ = false;
 }
 void Optimizer::Update(int index, NDArray weight, NDArray grad, real_t lr) {
   if (!init_) {
@@ -113,3 +121,6 @@ void Optimizer::Update(int index, NDArray weight, NDArray grad, real_t lr) {
 }
 }  // namespace cpp
 }  // namespace mxnet
+
+
+#endif /* end of include guard: MXNETCPP_HPP_C6LTBYYW */

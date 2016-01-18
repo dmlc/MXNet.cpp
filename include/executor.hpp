@@ -1,6 +1,12 @@
 /*!
- * Copyright (c) 2015 by Contributors
+ *  Copyright (c) 2016 by Contributors
+ * \file executor.hpp
+ * \brief implementation of the executor
+ * \author Zhang Chen
  */
+
+#ifndef EXECUTOR_HPP_UREQ2OJW
+#define EXECUTOR_HPP_UREQ2OJW
 
 #include <vector>
 #include "MxNetCpp.h"
@@ -57,3 +63,6 @@ void Executor::UpdateAll(Optimizer *opt, float lr, int arg_update_begin,
 }
 }  // namespace cpp
 }  // namespace mxnet
+
+
+#endif /* end of include guard: EXECUTOR_HPP_UREQ2OJW */
