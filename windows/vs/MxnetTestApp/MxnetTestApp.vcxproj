@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\include\MxNetCpp.h" />
     <ClInclude Include="..\..\..\include\MxNetOp.h" />
+    <ClInclude Include="data.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>

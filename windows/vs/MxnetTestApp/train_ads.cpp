@@ -13,90 +13,9 @@
 #include "MxNetCpp.h"
 #include "MxNetOp.h"
 #include "util.h"
+#include "data.h"
 using namespace std;
 using namespace mxnet::cpp;
-
-class DataReader {
-public:
-  DataReader(const std::string & dataDir,
-    int recordSize,
-    int batchSize)
-    : dataDir_(dataDir),
-    recordSize_(recordSize),
-    batchSize_(batchSize),
-    reset_(false),
-    eof_(false),
-    exit_(false) {
-
-  }
-  ~DataReader() {
-    lock_guard<mutex> l(mutex_);
-    exit_ = true;
-  }
-
-  bool Eof() {
-    lock_guard<mutex> l(mutex_);
-    return eof_;
-  }
-
-  void Reset() {
-    lock_guard<mutex> l(mutex_);
-    reset_ = true;
-    if (!buffer_.empty()) buffer_.clear();
-    condEmpty_.notify_one();
-  }
-
-  vector<float> ReadBatch() {
-    unique_lock<mutex> l(mutex_);
-    vector<float> r;
-    if (eof_) return r;
-    while (buffer_.empty()) {
-      condReady_.wait(l);
-    }
-    r.swap(buffer_);
-    condEmpty_.notify_one();
-    return r;
-  }
-
-private:
-  void IOThread() {
-    unique_lock<mutex> l(mutex_);
-    while (!exit_) {
-      ifstream in(dataDir_ + "/v.bin", ios::binary);
-      eof_ = false;
-      reset_ = false;
-      while (in.good()) {
-        while (!buffer_.empty()) {
-          if (reset_ || exit_) break;
-          condEmpty_.wait(l);
-        }
-        if (reset_ || exit_) break;
-        buffer_.resize(recordSize_ * batchSize_);
-        size_t bytesToRead = recordSize_ * sizeof(float) * batchSize_;
-        in.read((char*)&buffer_[0], bytesToRead);
-        size_t bytesRead = in.gcount();
-        CHECK_EQ(bytesRead % (sizeof(float)*recordSize_), 0);
-        buffer_.resize(bytesRead / (sizeof(float) * recordSize_));
-        condReady_.notify_one();
-      }
-      eof_ = true;
-      while (!exit_ && !reset_) condEmpty_.wait(l);
-    }
-  }
-
-  std::mutex mutex_;
-  std::condition_variable condReady_;
-  std::condition_variable condEmpty_;
-  vector<float> buffer_;
-  bool reset_;
-  bool eof_;
-  bool exit_;
-  const int recordSize_;
-  const int batchSize_;
-  const std::string dataDir_;
-  const std::thread ioThread_;
-};
-
 
 class Lenet {
 public:
@@ -126,95 +45,55 @@ public:
     }
 
     /*setup basic configs*/
-    int val_fold = 1;
-    int W = 28;
-    int H = 28;
-    int batch_size = 42;
-    int max_epoch = 100000;
-    float learning_rate = 1e-4;
-
-    /*prepare the data*/
-    vector<float> data_vec, label_vec;
-    size_t data_count = GetData(&data_vec, &label_vec);
-    const float *dptr = data_vec.data();
-    const float *lptr = label_vec.data();
-    NDArray data_array = NDArray(mshadow::Shape4(data_count, 1, W, H), ctx_cpu,
-      false);  // store in main memory, and copy to
-    // device memory while training
-    NDArray label_array =
-      NDArray(mshadow::Shape1(data_count), ctx_cpu,
-      false);  // it's also ok if just store them all in device memory
-    data_array.SyncCopyFromCPU(dptr, data_count * W * H);
-    label_array.SyncCopyFromCPU(lptr, data_count);
-    data_array.WaitToRead();
-    label_array.WaitToRead();
-
-    size_t train_num = data_count * (1 - val_fold / 10.0);
-    train_data = data_array.Slice(0, train_num);
-    train_label = label_array.Slice(0, train_num);
-    val_data = data_array.Slice(train_num, data_count);
-    val_label = label_array.Slice(train_num, data_count);
-
-    LG << "here read fin";
-
-    /*init some of the args*/
-    // map<string, NDArray> args_map;
-    args_map["data"] =
-      NDArray(mshadow::Shape4(batch_size, 1, W, H), ctx_dev, false);
-    args_map["data"] = data_array.Slice(0, batch_size).Copy(ctx_dev);
-    args_map["data_label"] = label_array.Slice(0, batch_size).Copy(ctx_dev);
-    NDArray::WaitAll();
-
-    LG << "here slice fin";
-    /*
-    * we can also feed in some of the args other than the input all by
-    * ourselves,
-    * fc2-w , fc1-b for example:
-    * */
-    // args_map["fc2_w"] =
-    // NDArray(mshadow::Shape2(500, 4 * 4 * 50), ctx_dev, false);
-    // NDArray::SampleGaussian(0, 1, &args_map["fc2_w"]);
-    // args_map["fc1_b"] = NDArray(mshadow::Shape1(10), ctx_dev, false);
-    // args_map["fc1_b"] = 0;
+    int batchSize = 1;
+    int numWorkers = 1;
+    int maxEpoch = 100000;
+    int sampleSize = 601;
+    float learning_rate = 0.1;
 
     mlp.InferArgsMap(ctx_dev, &args_map, args_map);
     Optimizer opt("ccsgd");
     opt.SetParam("momentum", 0.9)
       .SetParam("wd", 1e-4)
-      .SetParam("rescale_grad", 1.0)
+      .SetParam("rescale_grad", 1.0 / (numWorkers * batchSize))
       .SetParam("clip_gradient", 10);
 
-    for (int ITER = 0; ITER < max_epoch; ++ITER) {
-      size_t start_index = 0;
-      while (start_index < train_num) {
-        if (start_index + batch_size > train_num) {
-          start_index = train_num - batch_size;
+    for (int ITER = 0; ITER < maxEpoch; ++ITER) {
+      DataReader dataReader("./v.bin", sampleSize, batchSize);
+      while (!dataReader.Eof()) {
+        // read data in
+        auto r = dataReader.ReadBatch();
+        size_t nSamples = r.size() / sampleSize;
+        CHECK(!r.empty());
+        vector<float> data_vec, label_vec;
+        for (int i = 0; i < nSamples; i++) {
+          float * rp = r.data() + sampleSize * i;
+          label_vec.push_back(*rp);
+          data_vec.insert(data_vec.end(), rp + 1, rp + sampleSize);
         }
-        args_map["data"] =
-          train_data.Slice(start_index, start_index + batch_size)
-          .Copy(ctx_dev);
-        args_map["data_label"] =
-          train_label.Slice(start_index, start_index + batch_size)
-          .Copy(ctx_dev);
-        start_index += batch_size;
-        NDArray::WaitAll();
+        r.clear();
+        r.shrink_to_fit();
 
+        const float *dptr = data_vec.data();
+        const float *lptr = label_vec.data();
+        NDArray dataArray = NDArray(mshadow::Shape2(nSamples, sampleSize - 1), 
+          ctx_cpu, false);
+        NDArray labelArray =
+          NDArray(mshadow::Shape1(nSamples), ctx_cpu, false); 
+        dataArray.SyncCopyFromCPU(dptr, nSamples * (sampleSize - 1));
+        labelArray.SyncCopyFromCPU(lptr, nSamples);
+
+        args_map["data"] = dataArray;
+        args_map["data_label"] = labelArray;
         Executor *exe = mlp.SimpleBind(ctx_dev, args_map);
-
         exe->Forward(true);
-        NDArray::WaitAll();
-
         exe->Backward();
-        NDArray::WaitAll();
-
         exe->UpdateAll(&opt, learning_rate);
-        NDArray::WaitAll();
-
         delete exe;
       }
 
       LG << "Iter " << ITER
-        << ", accuracy: " << ValAccuracy(batch_size * 10, mlp);
+        << ", accuracy: " << ValAccuracy(batchSize * 10, mlp);
     }
   }
 
@@ -222,30 +101,6 @@ private:
   Context ctx_cpu;
   Context ctx_dev;
   map<string, NDArray> args_map;
-  NDArray train_data;
-  NDArray train_label;
-  NDArray val_data;
-  NDArray val_label;
-
-  size_t GetData(vector<float> *data, vector<float> *label) {
-    const char *train_data_path = "./train.csv";
-    ifstream inf(train_data_path);
-    string line;
-    inf >> line;  // ignore the header
-    size_t _N = 0;
-    while (inf >> line) {
-      for (auto &c : line) c = (c == ',') ? ' ' : c;
-      stringstream ss;
-      ss << line;
-      float _data;
-      ss >> _data;
-      label->push_back(_data);
-      while (ss >> _data) data->push_back(_data / 256.0);
-      _N++;
-    }
-    inf.close();
-    return _N;
-  }
 
   float ValAccuracy(int batch_size, Symbol lenet) {
     size_t val_num = val_data.GetShape()[0];
@@ -303,8 +158,5 @@ private:
 int main(int argc, char const *argv[]) {
   //Lenet lenet;
   //lenet.Run();
-
-  DataReader r(".", 1, 1);
-
   return 0;
 }
