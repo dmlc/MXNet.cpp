@@ -120,6 +120,7 @@ class Symbol {
  public:
   // TODO(zhangcheng-qinyinghua)
   // add more input in a single operator
+  Symbol(){};
   explicit Symbol(SymbolHandle handle);
   explicit Symbol(const std::string &name);
   Symbol operator+(const Symbol &rhs);

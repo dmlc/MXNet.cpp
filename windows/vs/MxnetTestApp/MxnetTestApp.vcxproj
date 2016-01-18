@@ -19,15 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\example\mlp.cpp" />
-    <ClCompile Include="..\..\..\src\executor.cpp" />
-    <ClCompile Include="..\..\..\src\MxNetCpp.cpp" />
-    <ClCompile Include="..\..\..\src\ndarray.cpp" />
-    <ClCompile Include="..\..\..\src\symbol.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\..\include\MxNetCpp.h" />
     <ClInclude Include="..\..\..\include\MxNetOp.h" />
+    <ClInclude Include="util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="train_ads.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B1C99034-DA2A-43F6-B8C3-C7DC4EED5EB7}</ProjectGuid>
