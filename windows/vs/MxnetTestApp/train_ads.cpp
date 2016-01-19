@@ -26,6 +26,7 @@ public:
     /*define the symbolic net*/
     auto sym_x = Symbol::Variable("data");
     auto sym_label = Symbol::Variable("label");
+    //Symbol w1("w1"), b1("b1"), w2("w2"), b2("b2"), w3("w3"), b3("b3");
     auto w1 = Symbol::Variable("w1");
     auto b1 = Symbol::Variable("b1");
     auto w2 = Symbol::Variable("w2");
@@ -83,6 +84,7 @@ public:
         exe->Forward(true);
         exe->Backward();
         exe->UpdateAll(&opt, learning_rate);
+        
         LG << "Iter " << ITER
           << ", accuracy: " << Auc(exe->outputs[0], labelArray);
         delete exe;

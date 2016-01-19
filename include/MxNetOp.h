@@ -17,7 +17,8 @@ namespace cpp {
  */
 inline Symbol abs(const std::string& symbol_name,
                   Symbol src) {
-  return Operator("abs")(src)
+  return Operator("abs")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -29,7 +30,8 @@ inline Symbol abs(const std::string& symbol_name,
  */
 inline Symbol sign(const std::string& symbol_name,
                    Symbol src) {
-  return Operator("sign")(src)
+  return Operator("sign")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -41,7 +43,8 @@ inline Symbol sign(const std::string& symbol_name,
  */
 inline Symbol round(const std::string& symbol_name,
                     Symbol src) {
-  return Operator("round")(src)
+  return Operator("round")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -53,7 +56,8 @@ inline Symbol round(const std::string& symbol_name,
  */
 inline Symbol ceil(const std::string& symbol_name,
                    Symbol src) {
-  return Operator("ceil")(src)
+  return Operator("ceil")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -65,7 +69,8 @@ inline Symbol ceil(const std::string& symbol_name,
  */
 inline Symbol floor(const std::string& symbol_name,
                     Symbol src) {
-  return Operator("floor")(src)
+  return Operator("floor")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -77,7 +82,8 @@ inline Symbol floor(const std::string& symbol_name,
  */
 inline Symbol square(const std::string& symbol_name,
                      Symbol src) {
-  return Operator("square")(src)
+  return Operator("square")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -89,7 +95,8 @@ inline Symbol square(const std::string& symbol_name,
  */
 inline Symbol sqrt(const std::string& symbol_name,
                    Symbol src) {
-  return Operator("sqrt")(src)
+  return Operator("sqrt")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -101,7 +108,8 @@ inline Symbol sqrt(const std::string& symbol_name,
  */
 inline Symbol rsqrt(const std::string& symbol_name,
                     Symbol src) {
-  return Operator("rsqrt")(src)
+  return Operator("rsqrt")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -113,7 +121,8 @@ inline Symbol rsqrt(const std::string& symbol_name,
  */
 inline Symbol exp(const std::string& symbol_name,
                   Symbol src) {
-  return Operator("exp")(src)
+  return Operator("exp")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -125,7 +134,8 @@ inline Symbol exp(const std::string& symbol_name,
  */
 inline Symbol log(const std::string& symbol_name,
                   Symbol src) {
-  return Operator("log")(src)
+  return Operator("log")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -137,7 +147,8 @@ inline Symbol log(const std::string& symbol_name,
  */
 inline Symbol cos(const std::string& symbol_name,
                   Symbol src) {
-  return Operator("cos")(src)
+  return Operator("cos")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -149,7 +160,8 @@ inline Symbol cos(const std::string& symbol_name,
  */
 inline Symbol sin(const std::string& symbol_name,
                   Symbol src) {
-  return Operator("sin")(src)
+  return Operator("sin")
+           .SetInput("src", src)
            .CreateSymbol(symbol_name);
 }
 
@@ -181,7 +193,8 @@ inline Symbol Activation(const std::string& symbol_name,
     "tanh"
   };
   return Operator("Activation")
-           .SetParam("act_type", ActivationActTypeValues[int(act_type)])(data)
+           .SetParam("act_type", ActivationActTypeValues[int(act_type)])
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -202,7 +215,8 @@ inline Symbol BatchNorm(const std::string& symbol_name,
   return Operator("BatchNorm")
            .SetParam("eps", eps)
            .SetParam("momentum", momentum)
-           .SetParam("fix_gamma", fix_gamma)(data)
+           .SetParam("fix_gamma", fix_gamma)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -214,7 +228,8 @@ inline Symbol BatchNorm(const std::string& symbol_name,
  */
 inline Symbol BlockGrad(const std::string& symbol_name,
                         Symbol data) {
-  return Operator("BlockGrad")(data)
+  return Operator("BlockGrad")
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -246,7 +261,8 @@ inline Symbol Cast(const std::string& symbol_name,
     "uint8"
   };
   return Operator("Cast")
-           .SetParam("dtype", CastDtypeValues[int(dtype)])(data)
+           .SetParam("dtype", CastDtypeValues[int(dtype)])
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -264,7 +280,8 @@ inline Symbol Concat(const std::string& symbol_name,
                      int dim = 1) {
   return Operator("Concat")
            .SetParam("num_args", num_args)
-           .SetParam("dim", dim)(data)
+           .SetParam("dim", dim)
+(data)
            .CreateSymbol(symbol_name);
 }
 
@@ -306,7 +323,10 @@ inline Symbol Convolution(const std::string& symbol_name,
            .SetParam("pad", pad)
            .SetParam("num_group", num_group)
            .SetParam("workspace", workspace)
-           .SetParam("no_bias", no_bias)(data, weight, bias)
+           .SetParam("no_bias", no_bias)
+           .SetInput("data", data)
+           .SetInput("weight", weight)
+           .SetInput("bias", bias)
            .CreateSymbol(symbol_name);
 }
 
@@ -332,7 +352,7 @@ inline Symbol Crop(const std::string& symbol_name,
            .SetParam("num_args", num_args)
            .SetParam("offset", offset)
            .SetParam("h_w", h_w)
-           .SetParam("center_crop", center_crop)()
+           .SetParam("center_crop", center_crop)
            .CreateSymbol(symbol_name);
 }
 
@@ -369,7 +389,10 @@ inline Symbol Deconvolution(const std::string& symbol_name,
            .SetParam("pad", pad)
            .SetParam("num_group", num_group)
            .SetParam("workspace", workspace)
-           .SetParam("no_bias", no_bias)(data, weight, bias)
+           .SetParam("no_bias", no_bias)
+           .SetInput("data", data)
+           .SetInput("weight", weight)
+           .SetInput("bias", bias)
            .CreateSymbol(symbol_name);
 }
 
@@ -384,7 +407,8 @@ inline Symbol Dropout(const std::string& symbol_name,
                       Symbol data,
                       mx_float p = 0.5) {
   return Operator("Dropout")
-           .SetParam("p", p)(data)
+           .SetParam("p", p)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -397,7 +421,7 @@ inline Symbol Dropout(const std::string& symbol_name,
 inline Symbol ElementWiseSum(const std::string& symbol_name,
                              int num_args) {
   return Operator("ElementWiseSum")
-           .SetParam("num_args", num_args)()
+           .SetParam("num_args", num_args)
            .CreateSymbol(symbol_name);
 }
 
@@ -417,7 +441,9 @@ inline Symbol Embedding(const std::string& symbol_name,
                         int output_dim) {
   return Operator("Embedding")
            .SetParam("input_dim", input_dim)
-           .SetParam("output_dim", output_dim)(data, weight)
+           .SetParam("output_dim", output_dim)
+           .SetInput("data", data)
+           .SetInput("weight", weight)
            .CreateSymbol(symbol_name);
 }
 
@@ -439,7 +465,10 @@ inline Symbol FullyConnected(const std::string& symbol_name,
                              bool no_bias = false) {
   return Operator("FullyConnected")
            .SetParam("num_hidden", num_hidden)
-           .SetParam("no_bias", no_bias)(data, weight, bias)
+           .SetParam("no_bias", no_bias)
+           .SetInput("data", data)
+           .SetInput("weight", weight)
+           .SetInput("bias", bias)
            .CreateSymbol(symbol_name);
 }
 
@@ -460,7 +489,8 @@ inline Symbol IdentityAttachKLSparseReg(const std::string& symbol_name,
   return Operator("IdentityAttachKLSparseReg")
            .SetParam("sparseness_target", sparseness_target)
            .SetParam("penalty", penalty)
-           .SetParam("momentum", momentum)(data)
+           .SetParam("momentum", momentum)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -502,7 +532,8 @@ inline Symbol LeakyReLU(const std::string& symbol_name,
            .SetParam("act_type", LeakyReLUActTypeValues[int(act_type)])
            .SetParam("slope", slope)
            .SetParam("lower_bound", lower_bound)
-           .SetParam("upper_bound", upper_bound)(data)
+           .SetParam("upper_bound", upper_bound)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -527,7 +558,8 @@ inline Symbol LRN(const std::string& symbol_name,
            .SetParam("nsize", nsize)
            .SetParam("alpha", alpha)
            .SetParam("beta", beta)
-           .SetParam("knorm", knorm)(data)
+           .SetParam("knorm", knorm)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -564,7 +596,8 @@ inline Symbol Pooling(const std::string& symbol_name,
            .SetParam("kernel", kernel)
            .SetParam("pool_type", PoolingPoolTypeValues[int(pool_type)])
            .SetParam("stride", stride)
-           .SetParam("pad", pad)(data)
+           .SetParam("pad", pad)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -581,7 +614,9 @@ inline Symbol LinearRegressionOutput(const std::string& symbol_name,
                                      Symbol label,
                                      mx_float grad_scale = 1) {
   return Operator("LinearRegressionOutput")
-           .SetParam("grad_scale", grad_scale)(data, label)
+           .SetParam("grad_scale", grad_scale)
+           .SetInput("data", data)
+           .SetInput("label", label)
            .CreateSymbol(symbol_name);
 }
 
@@ -599,7 +634,9 @@ inline Symbol MAERegressionOutput(const std::string& symbol_name,
                                   Symbol label,
                                   mx_float grad_scale = 1) {
   return Operator("MAERegressionOutput")
-           .SetParam("grad_scale", grad_scale)(data, label)
+           .SetParam("grad_scale", grad_scale)
+           .SetInput("data", data)
+           .SetInput("label", label)
            .CreateSymbol(symbol_name);
 }
 
@@ -618,7 +655,9 @@ inline Symbol LogisticRegressionOutput(const std::string& symbol_name,
                                        Symbol label,
                                        mx_float grad_scale = 1) {
   return Operator("LogisticRegressionOutput")
-           .SetParam("grad_scale", grad_scale)(data, label)
+           .SetParam("grad_scale", grad_scale)
+           .SetInput("data", data)
+           .SetInput("label", label)
            .CreateSymbol(symbol_name);
 }
 
@@ -635,7 +674,8 @@ inline Symbol Reshape(const std::string& symbol_name,
                       Symbol data,
                       mxnet::TShape target_shape) {
   return Operator("Reshape")
-           .SetParam("target_shape", target_shape)(data)
+           .SetParam("target_shape", target_shape)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -647,7 +687,8 @@ inline Symbol Reshape(const std::string& symbol_name,
  */
 inline Symbol Flatten(const std::string& symbol_name,
                       Symbol data) {
-  return Operator("Flatten")(data)
+  return Operator("Flatten")
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -660,7 +701,7 @@ inline Symbol Flatten(const std::string& symbol_name,
 inline Symbol SliceChannel(const std::string& symbol_name,
                            int num_outputs) {
   return Operator("SliceChannel")
-           .SetParam("num_outputs", num_outputs)()
+           .SetParam("num_outputs", num_outputs)
            .CreateSymbol(symbol_name);
 }
 
@@ -702,7 +743,8 @@ inline Symbol SoftmaxActivation(const std::string& symbol_name,
     "instance"
   };
   return Operator("SoftmaxActivation")
-           .SetParam("type", SoftmaxActivationTypeValues[int(type)])(data)
+           .SetParam("type", SoftmaxActivationTypeValues[int(type)])
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -731,7 +773,9 @@ inline Symbol SoftmaxOutput(const std::string& symbol_name,
            .SetParam("grad_scale", grad_scale)
            .SetParam("ignore_label", ignore_label)
            .SetParam("multi_output", multi_output)
-           .SetParam("use_ignore", use_ignore)(data, label)
+           .SetParam("use_ignore", use_ignore)
+           .SetInput("data", data)
+           .SetInput("label", label)
            .CreateSymbol(symbol_name);
 }
 
@@ -759,7 +803,8 @@ inline Symbol Softmax(const std::string& symbol_name,
            .SetParam("grad_scale", grad_scale)
            .SetParam("ignore_label", ignore_label)
            .SetParam("multi_output", multi_output)
-           .SetParam("use_ignore", use_ignore)(data)
+           .SetParam("use_ignore", use_ignore)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -777,7 +822,8 @@ inline Symbol SwapAxis(const std::string& symbol_name,
                        int dim2 = 0) {
   return Operator("SwapAxis")
            .SetParam("dim1", dim1)
-           .SetParam("dim2", dim2)(data)
+           .SetParam("dim2", dim2)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -836,7 +882,8 @@ inline Symbol UpSampling(const std::string& symbol_name,
            .SetParam("sample_type", UpSamplingSampleTypeValues[int(sample_type)])
            .SetParam("num_args", num_args)
            .SetParam("num_filter", num_filter)
-           .SetParam("multi_input_mode", UpSamplingMultiInputModeValues[int(multi_input_mode)])(data)
+           .SetParam("multi_input_mode", UpSamplingMultiInputModeValues[int(multi_input_mode)])
+(data)
            .CreateSymbol(symbol_name);
 }
 

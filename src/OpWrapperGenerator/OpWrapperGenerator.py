@@ -190,16 +190,18 @@ class Op:
                 v = arg.enum.GetConvertEnumVariableToString(v)
             ret = ret + indentStr + ' ' * 11 + \
                 '.SetParam(\"%s\", %s)\n' % (arg.name, v)
-        ret = ret[:-1]  # get rid of the last \n
+        #ret = ret[:-1]  # get rid of the last \n
         symbols = ''
         inputAlreadySet = False
         for arg in self.args:   # set inputs
             if arg.type != 'Symbol':
                 continue
             inputAlreadySet = True
-            if symbols != '':
-                symbols = symbols + ', '
-            symbols = symbols + arg.name
+            #if symbols != '':
+            #    symbols = symbols + ', '
+            #symbols = symbols + arg.name
+            ret = ret + indentStr + ' ' * 11 + \
+                '.SetInput(\"%s\", %s)\n' % (arg.name, arg.name)
         for arg in self.args:   # set input arrays vector<Symbol>
             if arg.type != 'const std::vector<Symbol>&':
                 continue
@@ -207,7 +209,7 @@ class Op:
                 logging.error("op %s has both Symbol[] and Symbol inputs!" % self.name)
             inputAlreadySet = True
             symbols = arg.name
-        ret = ret + '(%s)\n' % symbols
+            ret = ret + '(%s)\n' % symbols
         ret = ret + indentStr + ' ' * 11 + \
             '.CreateSymbol(symbol_name);\n'
         ret = ret + indentStr + '}\n'

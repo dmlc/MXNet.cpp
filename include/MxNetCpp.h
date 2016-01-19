@@ -327,7 +327,7 @@ class Symbol {
  public:
   // TODO(zhangcheng-qinyinghua)
   // add more input in a single operator
-  Symbol(){};
+  //Symbol(){};
   /*!
    * \brief construct a Symbol with SymbolHandle
    * \param handle the given SymbolHandle
