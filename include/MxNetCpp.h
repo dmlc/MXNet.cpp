@@ -18,15 +18,6 @@
 
 namespace mxnet {
 namespace cpp {
-
-/*!
- * \brief generic
- *
- * \param uri
- * \param allow
- * \return the
- */
-
 /*!
  * \brief transform TShape to mx_uint vector
  *
@@ -55,17 +46,6 @@ class Optimizer;
  */
 class Context {
  public:
-  /*!
-   * \brief constructing
-   * \param shape
-   * \param ctx
-   * \param delay_alloc
-   */
-
-  /*!
-   * \return the data TBlob
-   */
-
   /*!
    * \brief Context constructor
    * \param type type of the device
