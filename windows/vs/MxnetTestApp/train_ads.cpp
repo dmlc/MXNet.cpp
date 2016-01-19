@@ -17,14 +17,14 @@
 using namespace std;
 using namespace mxnet::cpp;
 
-class Lenet {
+class Mlp {
 public:
-  Lenet()
+  Mlp()
     : ctx_cpu(Context(DeviceType::kCPU, 0)),
     ctx_dev(Context(DeviceType::kCPU, 0)) {}
   void Run() {
     /*define the symbolic net*/
-    auto sym_x = Symbol::Variable("x");
+    auto sym_x = Symbol::Variable("data");
     auto sym_label = Symbol::Variable("label");
     auto w1 = Symbol::Variable("w1");
     auto b1 = Symbol::Variable("b1");
@@ -45,21 +45,16 @@ public:
     }
 
     /*setup basic configs*/
-    int batchSize = 1;
-    int numWorkers = 1;
-    int maxEpoch = 100000;
-    int sampleSize = 601;
-    float learning_rate = 0.1;
-
     mlp.InferArgsMap(ctx_dev, &args_map, args_map);
     Optimizer opt("ccsgd");
     opt.SetParam("momentum", 0.9)
-      .SetParam("wd", 1e-4)
-      .SetParam("rescale_grad", 1.0 / (numWorkers * batchSize))
-      .SetParam("clip_gradient", 10);
+      .SetParam("wd", 1e-4);
+      //.SetParam("rescale_grad", 1.0 / (numWorkers * batchSize))
+      //.SetParam("clip_gradient", 10);
 
     for (int ITER = 0; ITER < maxEpoch; ++ITER) {
-      DataReader dataReader("./v.bin", sampleSize, batchSize);
+      DataReader dataReader("f:/chhong/data/adsdnn/v.bin", sampleSize, batchSize);
+      NDArray testData, testLabel;
       while (!dataReader.Eof()) {
         // read data in
         auto r = dataReader.ReadBatch();
@@ -82,18 +77,19 @@ public:
           NDArray(mshadow::Shape1(nSamples), ctx_cpu, false); 
         dataArray.SyncCopyFromCPU(dptr, nSamples * (sampleSize - 1));
         labelArray.SyncCopyFromCPU(lptr, nSamples);
-
         args_map["data"] = dataArray;
-        args_map["data_label"] = labelArray;
+        args_map["label"] = labelArray;
         Executor *exe = mlp.SimpleBind(ctx_dev, args_map);
         exe->Forward(true);
         exe->Backward();
         exe->UpdateAll(&opt, learning_rate);
+        LG << "Iter " << ITER
+          << ", accuracy: " << Auc(exe->outputs[0], labelArray);
         delete exe;
       }
 
-      LG << "Iter " << ITER
-        << ", accuracy: " << ValAccuracy(batchSize * 10, mlp);
+      //LG << "Iter " << ITER
+      //  << ", accuracy: " << ValAccuracy(mlp, testData, testLabel);
     }
   }
 
@@ -101,62 +97,72 @@ private:
   Context ctx_cpu;
   Context ctx_dev;
   map<string, NDArray> args_map;
+  const static int batchSize = 3000;
+  const static int sampleSize = 601;
+  const static int numWorkers = 1;
+  const static int maxEpoch = 100000;
+  float learning_rate = 1;
 
-  float ValAccuracy(int batch_size, Symbol lenet) {
-    size_t val_num = val_data.GetShape()[0];
+  float ValAccuracy(Symbol mlp, 
+    const NDArray& samples, 
+    const NDArray& labels) {
+    size_t nSamples = samples.GetShape()[0];
+    size_t nCorrect = 0;
+    size_t startIndex = 0;
+    args_map["data"] = samples;
+    args_map["label"] = labels;
 
-    size_t correct_count = 0;
-    size_t all_count = 0;
-
-    size_t start_index = 0;
-    while (start_index < val_num) {
-      if (start_index + batch_size > val_num) {
-        start_index = val_num - batch_size;
-      }
-      args_map["data"] =
-        val_data.Slice(start_index, start_index + batch_size).Copy(ctx_dev);
-      args_map["data_label"] =
-        val_label.Slice(start_index, start_index + batch_size).Copy(ctx_dev);
-      start_index += batch_size;
-      NDArray::WaitAll();
-
-      Executor *exe = lenet.SimpleBind(ctx_dev, args_map);
-
-      exe->Forward(false);
-      NDArray::WaitAll();
-
-      const auto &out = exe->outputs;
-      NDArray out_cpu = out[0].Copy(ctx_cpu);
-      NDArray label_cpu =
-        val_label.Slice(start_index - batch_size, start_index).Copy(ctx_cpu);
-
-      NDArray::WaitAll();
-
-      mxnet::real_t *dptr_out = out_cpu.GetData();
-      mxnet::real_t *dptr_label = label_cpu.GetData();
-      for (int i = 0; i < batch_size; ++i) {
-        float label = dptr_label[i];
-        int cat_num = out_cpu.GetShape()[1];
-        float p_label = 0, max_p = dptr_out[i * cat_num];
-        for (int j = 0; j < cat_num; ++j) {
-          float p = dptr_out[i * cat_num + j];
-          if (max_p < p) {
-            p_label = j;
-            max_p = p;
-          }
+    Executor *exe = mlp.SimpleBind(ctx_dev, args_map);
+    exe->Forward(false);
+    const auto &out = exe->outputs;
+    NDArray result = out[0].Copy(ctx_cpu);
+    result.WaitToRead();
+    mxnet::real_t *pResult = result.GetData();
+    const mxnet::real_t *pLabel = labels.GetData();
+    for (int i = 0; i < nSamples; ++i) {
+      float label = pLabel[i];
+      int cat_num = result.GetShape()[1];
+      float p_label = 0, max_p = pResult[i * cat_num];
+      for (int j = 0; j < cat_num; ++j) {
+        float p = pResult[i * cat_num + j];
+        if (max_p < p) {
+          p_label = j;
+          max_p = p;
         }
-        if (label == p_label) correct_count++;
       }
-      all_count += batch_size;
-
-      delete exe;
+      if (label == p_label) nCorrect++;
     }
-    return correct_count * 1.0 / all_count;
+    delete exe;
+    
+    return nCorrect * 1.0 / nSamples;
   }
+  
+  float Auc(const NDArray& result, const NDArray& labels) {
+    result.WaitToRead();
+    const mxnet::real_t *pResult = result.GetData();
+    const mxnet::real_t *pLabel = labels.GetData();
+    int nSamples = labels.GetShape()[0];
+    size_t nCorrect = 0;
+    for (int i = 0; i < nSamples; ++i) {
+      float label = pLabel[i];
+      int cat_num = result.GetShape()[1];
+      float p_label = 0, max_p = pResult[i * cat_num];
+      for (int j = 0; j < cat_num; ++j) {
+        float p = pResult[i * cat_num + j];
+        if (max_p < p) {
+          p_label = j;
+          max_p = p;
+        }
+      }
+      if (label == p_label) nCorrect++;
+    }
+    return nCorrect * 1.0 / nSamples;
+  }
+
 };
 
 int main(int argc, char const *argv[]) {
-  //Lenet lenet;
-  //lenet.Run();
+  Mlp mlp;
+  mlp.Run();
   return 0;
 }

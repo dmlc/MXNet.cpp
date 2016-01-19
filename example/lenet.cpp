@@ -136,15 +136,9 @@ class Lenet {
         NDArray::WaitAll();
 
         Executor *exe = lenet.SimpleBind(ctx_dev, args_map);
-
         exe->Forward(true);
-        NDArray::WaitAll();
-
         exe->Backward();
-        NDArray::WaitAll();
-
         exe->UpdateAll(&opt, learning_rate);
-        NDArray::WaitAll();
 
         delete exe;
       }
@@ -202,9 +196,7 @@ class Lenet {
       NDArray::WaitAll();
 
       Executor *exe = lenet.SimpleBind(ctx_dev, args_map);
-
       exe->Forward(false);
-      NDArray::WaitAll();
 
       const auto &out = exe->outputs;
       NDArray out_cpu = out[0].Copy(ctx_cpu);

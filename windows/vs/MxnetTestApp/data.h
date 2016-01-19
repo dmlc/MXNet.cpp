@@ -75,7 +75,7 @@ private:
         in.read((char*)&buffer_[0], bytesToRead);
         size_t bytesRead = in.gcount();
         CHECK_EQ(bytesRead % (sizeof(float)*recordSize_), 0);
-        buffer_.resize(bytesRead / (sizeof(float) * recordSize_));
+        buffer_.resize(bytesRead / sizeof(float));
         condReady_.notify_one();
       }
       eof_ = true;
@@ -101,10 +101,10 @@ void TestDataReader() {
   DataReader r("d.txt", 3, 2);
   for (int i = 0; i < 3; i++) {
     while (!r.Eof()) {
-      vector<float> v = r.ReadBatch();
+      std::vector<float> v = r.ReadBatch();
       if (v.empty())
         break;
-      cout << std::hex << *(uint32_t*)(&v[0]) << endl;
+      std::cout << std::hex << *(uint32_t*)(&v[0]) << std::endl;
     }
     r.Reset();
   }

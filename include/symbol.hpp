@@ -182,8 +182,6 @@ void Symbol::InferExecutorArrays(
   for (const auto &shape : aux_shapes) {
     aux_arrays->push_back(NDArray(shape, context, false));
   }
-
-  NDArray::WaitAll();
 }
 
 void Symbol::InferArgsMap(
