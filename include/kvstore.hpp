@@ -1,7 +1,7 @@
 /*!
  *  Copyright (c) 2016 by Contributors
  * \file kvstore.hpp
- * \brief 
+ * \brief implementation of kvstore
  * \author Xin Li
  */
 
