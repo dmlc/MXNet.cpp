@@ -700,7 +700,8 @@ public:
   inline void Push(const std::vector<int>& keys, const std::vector<NDArray>& val, int priority = 0);
   inline NDArray Pull(int key, int priority = 0);
   inline std::vector<NDArray> Pull(const std::vector<int>& keys, int priority = 0);
-  inline void SetOptimizer(const Optimizer& optimizer);
+  // TODO: put lr in optimizer or not?
+  inline void SetOptimizer(Optimizer& optimizer, real_t lr);
   inline std::string GetType() const;
   inline int GetRank() const;
   inline int GetNumWorkers() const;

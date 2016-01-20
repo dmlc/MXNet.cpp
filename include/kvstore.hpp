@@ -58,8 +58,20 @@ std::vector<NDArray> KVStore::Pull(const std::vector<int>& keys,
   return std::move(out);
 }
 
-void KVStore::SetOptimizer(const Optimizer& optimizer) {
-  // TODO
+namespace private_ {
+  real_t learning_rate;
+
+  extern "C"
+  void updater(int key, NDArrayHandle recv, NDArrayHandle local,
+      void* handle_) {
+    Optimizer *opt = static_cast<Optimizer*>(handle_);
+    opt->Update(key, NDArray(local), NDArray(recv), learning_rate);
+  }
+}
+
+void KVStore::SetOptimizer(Optimizer& optimizer, real_t lr) {
+  private_::learning_rate = lr;
+  CHECK_EQ(MXKVStoreSetUpdater(handle_, &private_::updater, &optimizer), 0);
 }
 
 std::string KVStore::GetType() const {
