@@ -692,6 +692,22 @@ class Mxnet {
   std::map<std::string, AtomicSymbolCreator> symbol_creators_;
 };
 static Mxnet *MxNet = new Mxnet();
+
+class KVStore {
+public:
+  inline KVStore(bool IsLocal = true);
+  inline void Push(int key, const NDArray& val, int priority = 0);
+  inline void Push(const std::vector<int>& keys, const std::vector<NDArray>& val, int priority = 0);
+  inline NDArray Pull(int key, int priority = 0);
+  inline std::vector<NDArray> Pull(const std::vector<int>& keys, int priority = 0);
+  inline void SetOptimizer(const Optimizer& optimizer);
+  inline std::string GetType() const;
+  inline int GetRank() const;
+  inline int GetNumWorkers() const;
+
+private:
+  KVStoreHandle handle_;
+};
 }  // namespace cpp
 }  // namespace mxnet
 
