@@ -6,7 +6,6 @@
 #include <vector>
 #include <mxnet/ndarray.h>
 #include "MxNetCpp.h"
-#include "MxNetOp.h"
 
 using namespace std;
 using namespace mxnet::cpp;

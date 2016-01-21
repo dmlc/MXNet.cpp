@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include "MxNetCpp.h"
-#include "MxNetOp.h"
 using namespace std;
 using namespace mxnet::cpp;
 
