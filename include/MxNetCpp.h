@@ -246,7 +246,7 @@ class NDArray {
    * \brief Block until all the pending write operations with respect
    *    to current NDArray are finished, and read can be performed.
    */
-  void WaitToRead();
+  void WaitToRead() const;
   /*!
    * \brief Block until all the pending read/write operations with respect
    *    to current NDArray are finished, and write can be performed.
@@ -279,6 +279,7 @@ class NDArray {
    * \return the data pointer to the current NDArray
    */
   mx_float *GetData();
+  const mx_float *NDArray::GetData() const;
   /*!
    * \return the context of NDArray
    */
@@ -324,6 +325,9 @@ struct SymBlob {
  */
 class Symbol {
  public:
+  // TODO(zhangcheng-qinyinghua)
+  // add more input in a single operator
+  //Symbol(){};
   /*!
    * \brief construct a Symbol with SymbolHandle
    * \param handle the given SymbolHandle
@@ -566,7 +570,15 @@ class Executor {
    * \brief Perform a Forward operation of Operator
    *  After this operation, user can get the result by using function head.
    */
-  void Forward(bool is_train) { MXExecutorForward(handle_, is_train ? 1 : 0); }
+  void Forward(bool is_train) {
+    MXExecutorForward(handle_, is_train ? 1 : 0);
+    mx_uint out_size;
+    NDArrayHandle *out_array;
+    CHECK_EQ(MXExecutorOutputs(handle_, &out_size, &out_array), 0);
+    for (mx_uint i = 0; i < out_size; ++i) {
+      outputs[i] = NDArray(out_array[i]);
+    }
+  }
   /*!
    * \brief Perform a Backward operation of the Operator.
    *  This must be called after Forward.
@@ -687,5 +699,6 @@ static Mxnet *MxNet = new Mxnet();
 #include "executor.hpp"
 #include "symbol.hpp"
 #include "ndarray.hpp"
+#include "op.h"
 
 #endif  // MXNETCPP_H_

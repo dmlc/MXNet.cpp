@@ -238,7 +238,7 @@ NDArray NDArray::Slice(mx_uint begin, mx_uint end) const {
   return NDArray(handle);
 }
 
-void NDArray::WaitToRead() {
+void NDArray::WaitToRead() const {
   CHECK_EQ(MXNDArrayWaitToRead(blob_ptr_->handle_), 0);
 }
 void NDArray::WaitToWrite() {
@@ -271,6 +271,11 @@ std::vector<mx_uint> NDArray::GetShape() const {
   return ret;
 }
 mx_float *NDArray::GetData() {
+  mx_float *ret;
+  MXNDArrayGetData(blob_ptr_->handle_, &ret);
+  return ret;
+}
+const mx_float *NDArray::GetData() const {
   mx_float *ret;
   MXNDArrayGetData(blob_ptr_->handle_, &ret);
   return ret;

@@ -35,17 +35,24 @@ void OutputAccuracy(mxnet::real_t* pred, mxnet::real_t* target) {
 
 void MLP() {
   auto sym_x = Symbol::Variable("X");
-  auto sym_w1 = Symbol::Variable("W1");
-  auto sym_b1 = Symbol::Variable("B1");
-  auto sym_w2 = Symbol::Variable("W2");
-  auto sym_b2 = Symbol::Variable("B2");
   auto sym_label = Symbol::Variable("label");
 
-  auto sym_fc_1 = FullyConnected("fc1", sym_x, sym_w1, sym_b1, 512);
-  auto sym_act_1 = LeakyReLU("act_1", sym_fc_1, LeakyReLUActType::leaky);
-  auto sym_fc_2 = FullyConnected("fc2", sym_act_1, sym_w2, sym_b2, 10);
-  auto sym_act_2 = LeakyReLU("act_2", sym_fc_2, LeakyReLUActType::leaky);
-  auto sym_out = SoftmaxOutput("softmax", sym_act_2, sym_label);
+  const int nLayers = 2;
+  vector<int> layerSizes({512, 10});
+  vector<Symbol> weights(nLayers);
+  vector<Symbol> biases(nLayers);
+  vector<Symbol> outputs(nLayers);
+
+  for (int i = 0; i < nLayers; i++) {
+    string istr = to_string(i);
+    weights[i] = Symbol::Variable(string("w") + istr);
+    biases[i] = Symbol::Variable(string("b") + istr);
+    Symbol fc = FullyConnected(string("fc") + istr, 
+      i == 0? sym_x : outputs[i-1], 
+      weights[i], biases[i], layerSizes[i]);
+    outputs[i] = LeakyReLU(string("act") + istr, fc, LeakyReLUActType::leaky);
+  }
+  auto sym_out = SoftmaxOutput("softmax", outputs[nLayers - 1], sym_label);
 
   Context ctx_dev(DeviceType::kCPU, 0);
 
