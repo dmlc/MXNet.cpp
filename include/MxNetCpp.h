@@ -699,5 +699,6 @@ static Mxnet *MxNet = new Mxnet();
 #include "executor.hpp"
 #include "symbol.hpp"
 #include "ndarray.hpp"
+#include "op.h"
 
 #endif  // MXNETCPP_H_

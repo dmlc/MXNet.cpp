@@ -23,8 +23,8 @@
     <ClInclude Include="..\..\..\include\kvstore.h" />
     <ClInclude Include="..\..\..\include\MxNetCpp.h" />
     <ClInclude Include="..\..\..\include\MxNetCpp.hpp" />
-    <ClInclude Include="..\..\..\include\MxNetOp.h" />
     <ClInclude Include="..\..\..\include\ndarray.hpp" />
+    <ClInclude Include="..\..\..\include\op.h" />
     <ClInclude Include="..\..\..\include\symbol.hpp" />
     <ClInclude Include="data.h" />
     <ClInclude Include="util.h" />
