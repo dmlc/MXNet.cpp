@@ -26,7 +26,6 @@ public:
     /*define the symbolic net*/
     auto sym_x = Symbol::Variable("data");
     auto sym_label = Symbol::Variable("label");
-    //Symbol w1("w1"), b1("b1"), w2("w2"), b2("b2"), w3("w3"), b3("b3");
     auto w1 = Symbol::Variable("w1");
     auto b1 = Symbol::Variable("b1");
     auto w2 = Symbol::Variable("w2");
@@ -41,26 +40,40 @@ public:
     auto fc3 = FullyConnected("fc3", act2, w3, b3, 1);
     auto mlp = LogisticRegressionOutput("softmax", fc3, sym_label);
 
+    NDArray w1m(vector<mx_uint>({ 2048, 600 }), ctx_cpu), 
+      w2m(vector<mx_uint>({ 512, 2048 }), ctx_cpu), 
+      w3m(vector<mx_uint>({ 1, 512 }), ctx_cpu);
+    NDArray::SampleGaussian(0, 1, &w1m);
+    NDArray::SampleGaussian(0, 1, &w2m);
+    NDArray::SampleGaussian(0, 1, &w3m);
+    NDArray b1m(mshadow::Shape1(2048), ctx_cpu),
+      b2m(mshadow::Shape1(512), ctx_cpu),
+      b3m(mshadow::Shape1(1), ctx_cpu);
+    NDArray::SampleGaussian(0, 1, &b1m);
+    NDArray::SampleGaussian(0, 1, &b2m);
+    NDArray::SampleGaussian(0, 1, &b3m);
+
     for (auto s : mlp.ListArguments()) {
       LG << s;
-    }
+    }  
 
     /*setup basic configs*/
-    mlp.InferArgsMap(ctx_dev, &args_map, args_map);
     Optimizer opt("ccsgd");
     opt.SetParam("momentum", 0.9)
-      .SetParam("wd", 1e-4);
-      //.SetParam("rescale_grad", 1.0 / (numWorkers * batchSize))
+      .SetParam("wd", 0.00001)
+      .SetParam("rescale_grad", 1.0 / (numWorkers * batchSize));
       //.SetParam("clip_gradient", 10);
-
+    const int nMiniBatches = 1;
     for (int ITER = 0; ITER < maxEpoch; ++ITER) {
       DataReader dataReader("f:/chhong/data/adsdnn/v.bin", sampleSize, batchSize);
       NDArray testData, testLabel;
+      int mb = 0;
       while (!dataReader.Eof()) {
+        //if (mb++ >= nMiniBatches) break;
         // read data in
         auto r = dataReader.ReadBatch();
         size_t nSamples = r.size() / sampleSize;
-        CHECK(!r.empty());
+        CHECK(!r.empty());     
         vector<float> data_vec, label_vec;
         for (int i = 0; i < nSamples; i++) {
           float * rp = r.data() + sampleSize * i;
@@ -80,13 +93,20 @@ public:
         labelArray.SyncCopyFromCPU(lptr, nSamples);
         args_map["data"] = dataArray;
         args_map["label"] = labelArray;
+        args_map["w1"] = w1m;
+        args_map["b1"] = b1m;
+        args_map["w2"] = w2m;
+        args_map["b2"] = b2m;
+        args_map["w3"] = w3m;
+        args_map["b3"] = b3m;
         Executor *exe = mlp.SimpleBind(ctx_dev, args_map);
         exe->Forward(true);
-        exe->Backward();
-        exe->UpdateAll(&opt, learning_rate);
-        
+        NDArray::WaitAll();
         LG << "Iter " << ITER
           << ", accuracy: " << Auc(exe->outputs[0], labelArray);
+        exe->Backward();
+        exe->UpdateAll(&opt, learning_rate);     
+        NDArray::WaitAll();
         delete exe;
       }
 
@@ -103,7 +123,7 @@ private:
   const static int sampleSize = 601;
   const static int numWorkers = 1;
   const static int maxEpoch = 100000;
-  float learning_rate = 1;
+  float learning_rate = 0.01;
 
   float ValAccuracy(Symbol mlp, 
     const NDArray& samples, 
@@ -147,16 +167,8 @@ private:
     size_t nCorrect = 0;
     for (int i = 0; i < nSamples; ++i) {
       float label = pLabel[i];
-      int cat_num = result.GetShape()[1];
-      float p_label = 0, max_p = pResult[i * cat_num];
-      for (int j = 0; j < cat_num; ++j) {
-        float p = pResult[i * cat_num + j];
-        if (max_p < p) {
-          p_label = j;
-          max_p = p;
-        }
-      }
-      if (label == p_label) nCorrect++;
+      float p_label = pResult[i];
+      if (label == (p_label >= 0.5)) nCorrect++;
     }
     return nCorrect * 1.0 / nSamples;
   }

@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\executor.hpp" />
+    <ClInclude Include="..\..\..\include\kvstore.h" />
     <ClInclude Include="..\..\..\include\MxNetCpp.h" />
     <ClInclude Include="..\..\..\include\MxNetCpp.hpp" />
     <ClInclude Include="..\..\..\include\MxNetOp.h" />

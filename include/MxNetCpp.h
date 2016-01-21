@@ -570,7 +570,15 @@ class Executor {
    * \brief Perform a Forward operation of Operator
    *  After this operation, user can get the result by using function head.
    */
-  void Forward(bool is_train) { MXExecutorForward(handle_, is_train ? 1 : 0); }
+  void Forward(bool is_train) {
+    MXExecutorForward(handle_, is_train ? 1 : 0);
+    mx_uint out_size;
+    NDArrayHandle *out_array;
+    CHECK_EQ(MXExecutorOutputs(handle_, &out_size, &out_array), 0);
+    for (mx_uint i = 0; i < out_size; ++i) {
+      outputs[i] = NDArray(out_array[i]);
+    }
+  }
   /*!
    * \brief Perform a Backward operation of the Operator.
    *  This must be called after Forward.
