@@ -9,10 +9,12 @@
 #define MXNETCPP_H_
 
 #include <mxnet/base.h>
+#include <mxnet/ndarray.h>
 #include <mxnet/operator.h>
 #include <mxnet/c_api.h>
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -235,6 +237,37 @@ class NDArray {
    * \return the new copy
    */
   NDArray Copy(const Context &) const;
+
+  /*!
+   * \brief return offset of two dimensions array
+   * \param h height position
+   * \param w width position
+   * \return offset of two dimensions array
+   */
+  inline
+  size_t offset(size_t h = 0, size_t w = 0) const
+  {
+    auto *ptr = static_cast<mxnet::NDArray*>(blob_ptr_->handle_);
+    mshadow::TShape const &shape = ptr->shape();
+    auto const dim = shape.get<2>();
+
+    return (h * dim[1]) + w;
+  }
+
+  /*!
+   * \brief return value of two dimensions array
+   * \param h height position
+   * \param w width position
+   * \return value of two dimensions array
+   */
+  mx_float at(size_t h, size_t w) const
+  {
+    auto *ptr = static_cast<mxnet::NDArray*>(blob_ptr_->handle_);
+    auto *d_ptr = static_cast<mx_float*>(ptr->data().dptr_);
+
+    return d_ptr[offset(h,w)];
+  }
+
   /*!
    * \brief Slice a NDArray
    * \param begin begin index in first dim
