@@ -262,10 +262,7 @@ class NDArray {
    */
   mx_float at(size_t h, size_t w) const
   {
-    auto *ptr = static_cast<mxnet::NDArray*>(blob_ptr_->handle_);
-    auto *d_ptr = static_cast<mx_float*>(ptr->data().dptr_);
-
-    return d_ptr[offset(h,w)];
+    return GetData()[offset(h,w)];
   }
 
   /*!
