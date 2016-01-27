@@ -695,16 +695,19 @@ static Mxnet *MxNet = new Mxnet();
 
 class KVStore {
 public:
-  inline KVStore(bool IsLocal = true);
+  inline KVStore(const std::string& name = "local");
+  inline void Init(int key, const NDArray& val);
+  inline void Init(const std::vector<int>& keys, const std::vector<NDArray>& vals);
   inline void Push(int key, const NDArray& val, int priority = 0);
-  inline void Push(const std::vector<int>& keys, const std::vector<NDArray>& val, int priority = 0);
-  inline NDArray Pull(int key, int priority = 0);
-  inline std::vector<NDArray> Pull(const std::vector<int>& keys, int priority = 0);
+  inline void Push(const std::vector<int>& keys, const std::vector<NDArray>& vals, int priority = 0);
+  inline void Pull(int key, NDArray& out, int priority = 0);
+  inline void Pull(const std::vector<int>& keys, std::vector<NDArray>& outs, int priority = 0);
   // TODO: put lr in optimizer or not?
   inline void SetOptimizer(Optimizer& optimizer, real_t lr);
   inline std::string GetType() const;
   inline int GetRank() const;
   inline int GetNumWorkers() const;
+  ~KVStore() { MXKVStoreFree(handle_); }
 
 private:
   KVStoreHandle handle_;
@@ -716,5 +719,6 @@ private:
 #include "executor.hpp"
 #include "symbol.hpp"
 #include "ndarray.hpp"
+#include "kvstore.hpp"
 
 #endif  // MXNETCPP_H_

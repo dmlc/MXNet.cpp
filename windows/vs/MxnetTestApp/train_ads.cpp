@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <numeric>
 
 #include "MxNetCpp.h"
 #include "MxNetOp.h"
@@ -63,7 +64,11 @@ public:
       .SetParam("wd", 0.00001)
       .SetParam("rescale_grad", 1.0 / (numWorkers * batchSize));
       //.SetParam("clip_gradient", 10);
+    KVStore kv;
+    kv.SetOptimizer(opt, learning_rate);
+
     const int nMiniBatches = 1;
+    bool init_kv = false;
     for (int ITER = 0; ITER < maxEpoch; ++ITER) {
       DataReader dataReader("f:/chhong/data/adsdnn/v.bin", sampleSize, batchSize);
       NDArray testData, testLabel;
@@ -100,12 +105,21 @@ public:
         args_map["w3"] = w3m;
         args_map["b3"] = b3m;
         Executor *exe = mlp.SimpleBind(ctx_dev, args_map);
+        std::vector<int> indices(exe->arg_arrays.size());
+        std::iota(indices.begin(), indices.end(), 0);
+        if (!init_kv) {
+          // First time, init kvstore
+          kv.Init(indices, exe->arg_arrays);
+          init_kv = true;
+        }
         exe->Forward(true);
         NDArray::WaitAll();
         LG << "Iter " << ITER
           << ", accuracy: " << Auc(exe->outputs[0], labelArray);
         exe->Backward();
-        exe->UpdateAll(&opt, learning_rate);     
+        kv.Push(indices, exe->grad_arrays);
+        kv.Pull(indices, exe->arg_arrays);
+        //exe->UpdateAll(&opt, learning_rate);
         NDArray::WaitAll();
         delete exe;
       }
