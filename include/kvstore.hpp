@@ -13,8 +13,25 @@
 namespace mxnet {
 namespace cpp {
 
-KVStore::KVStore(bool IsLocal) {
-  CHECK_EQ(MXKVStoreCreate(IsLocal ? "local" : "dist", &handle_), 0);
+KVStore::KVStore(const std::string& name) {
+  CHECK_EQ(MXKVStoreCreate(name.c_str(), &handle_), 0);
+}
+
+void KVStore::Init(int key, const NDArray& val) {
+  NDArrayHandle val_handle = val.GetHandle();
+  CHECK_EQ(MXKVStoreInit(handle_, 1, &key, &val_handle), 0);
+}
+
+void KVStore::Init(const std::vector<int>& keys, const std::vector<NDArray>& vals) {
+  CHECK_EQ(keys.size(), vals.size());
+  std::vector<NDArrayHandle> val_handles(vals.size());
+  std::transform(vals.cbegin(), vals.cend(), val_handles.begin(),
+      [](const NDArray& val) {
+        return val.GetHandle();
+      });
+
+  CHECK_EQ(MXKVStoreInit(handle_, keys.size(), keys.data(),
+      val_handles.data()), 0);
 }
 
 void KVStore::Push(int key, const NDArray& val, int priority) {
@@ -26,7 +43,7 @@ void KVStore::Push(const std::vector<int>& keys,
                    const std::vector<NDArray>& vals,
                    int priority) {
   CHECK_EQ(keys.size(), vals.size());
-  std::vector<NDArrayHandle> val_handles;
+  std::vector<NDArrayHandle> val_handles(vals.size());
   std::transform(vals.cbegin(), vals.cend(), val_handles.begin(),
       [](const NDArray& val) {
         return val.GetHandle();
@@ -36,26 +53,22 @@ void KVStore::Push(const std::vector<int>& keys,
       val_handles.data(), priority), 0);
 }
 
-NDArray KVStore::Pull(int key, int priority) {
-  NDArray out;
+void KVStore::Pull(int key, NDArray& out, int priority) {
   NDArrayHandle out_handle = out.GetHandle();
   CHECK_EQ(MXKVStorePull(handle_, 1, &key, &out_handle, priority), 0);
-  return std::move(out);
 }
 
-std::vector<NDArray> KVStore::Pull(const std::vector<int>& keys,
-                                    int priority) {
-  std::vector<NDArray> out(keys.size());
-  std::vector<NDArrayHandle> out_handles;
-  std::transform(out.cbegin(), out.cend(), out_handles.begin(),
+void KVStore::Pull(const std::vector<int>& keys, std::vector<NDArray>& outs, int priority) {
+  CHECK_EQ(keys.size(), outs.size());
+
+  std::vector<NDArrayHandle> out_handles(keys.size());
+  std::transform(outs.cbegin(), outs.cend(), out_handles.begin(),
       [](const NDArray& val) {
         return val.GetHandle();
       });
 
   CHECK_EQ(MXKVStorePull(handle_, keys.size(), keys.data(),
       out_handles.data(), priority), 0);
-
-  return std::move(out);
 }
 
 namespace private_ {
