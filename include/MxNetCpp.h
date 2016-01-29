@@ -40,6 +40,7 @@ class Symbol;
 class Operator;
 class Executor;
 class Optimizer;
+class KVStore;
 
 /*!
  * \brief Context interface
@@ -635,8 +636,9 @@ class Optimizer {
   /*!
    * \brief Operator constructor, the optimizer is not initialized until the first Update
    * \param opt_type type of the optimizer
+   * \param learning_rate
    */
-  explicit Optimizer(const std::string &opt_type);
+  Optimizer(const std::string &opt_type, float learning_rate);
   /*!
    * \brief destructor, free the handle
    */
@@ -666,13 +668,17 @@ class Optimizer {
    *  \param grad gradient for the weight.
    *  \param lr learning rate for this update.
    */
-  void Update(int index, NDArray weight, NDArray grad, real_t lr);
+  void Update(int index, NDArray weight, NDArray grad);
   // TODO(zhangcheng-qinyinghua)
   // implement Update a list of arrays, maybe in the form of map
   //void Update(int index, std::vector<NDArray> weights, std::vector<NDArray> grad, real_t lr);
 
+  std::string Serialize() const;
+
  private:
   bool init_;
+  float learning_rate_;
+  std::string opt_type_;
   Optimizer(const Optimizer &);
   Optimizer &operator=(const Optimizer &);
   OptimizerHandle handle_;
@@ -696,6 +702,7 @@ static Mxnet *MxNet = new Mxnet();
 class KVStore {
 public:
   inline KVStore(const std::string& name = "local");
+  inline void RunServer();
   inline void Init(int key, const NDArray& val);
   inline void Init(const std::vector<int>& keys, const std::vector<NDArray>& vals);
   inline void Push(int key, const NDArray& val, int priority = 0);
@@ -703,14 +710,16 @@ public:
   inline void Pull(int key, NDArray& out, int priority = 0);
   inline void Pull(const std::vector<int>& keys, std::vector<NDArray>& outs, int priority = 0);
   // TODO: put lr in optimizer or not?
-  inline void SetOptimizer(Optimizer& optimizer, real_t lr);
+  inline void SetOptimizer(std::unique_ptr<Optimizer> optimizer);
   inline std::string GetType() const;
   inline int GetRank() const;
   inline int GetNumWorkers() const;
+  inline std::string GetRole() const;
   ~KVStore() { MXKVStoreFree(handle_); }
 
 private:
   KVStoreHandle handle_;
+  std::unique_ptr<Optimizer> optimizer_;
 };
 }  // namespace cpp
 }  // namespace mxnet

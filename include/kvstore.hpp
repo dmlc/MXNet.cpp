@@ -6,6 +6,7 @@
  */
 
 #include "MxNetCpp.h"
+#include <numeric>
 
 #ifndef KVSTORE_HPP
 #define KVSTORE_HPP
@@ -13,8 +14,42 @@
 namespace mxnet {
 namespace cpp {
 
+namespace private_ {
+  KVStore *kvstore = nullptr;
+
+  extern "C"
+  void controller(int head, const char* body) {
+    if (kvstore == nullptr) {
+      return;
+    }
+    if (head == 0) {
+      std::map<std::string, std::string> params;
+      std::istringstream sin(body);
+      std::string line;
+      while (getline(sin, line)) {
+        size_t n = line.find('=');
+        params.emplace(line.substr(0, n), line.substr(n+1));
+      }
+      float lr = std::stof(params.at("learning_rate"));
+      std::unique_ptr<Optimizer> opt(new Optimizer(params.at("opt_type"), lr));
+      params.erase("opt_type");
+      params.erase("learning_rate");
+      for (const auto& pair : params) {
+        opt->SetParam(pair.first, pair.second);
+      }
+      kvstore->SetOptimizer(std::move(opt));
+    }
+  }
+}
+
 KVStore::KVStore(const std::string& name) {
   CHECK_EQ(MXKVStoreCreate(name.c_str(), &handle_), 0);
+}
+
+void KVStore::RunServer() {
+  CHECK_NE(GetRole(), "worker");
+  private_::kvstore = this;
+  CHECK_EQ(MXKVStoreRunServer(handle_, &private_::controller), 0);
 }
 
 void KVStore::Init(int key, const NDArray& val) {
@@ -72,19 +107,21 @@ void KVStore::Pull(const std::vector<int>& keys, std::vector<NDArray>& outs, int
 }
 
 namespace private_ {
-  real_t learning_rate;
-
   extern "C"
   void updater(int key, NDArrayHandle recv, NDArrayHandle local,
       void* handle_) {
     Optimizer *opt = static_cast<Optimizer*>(handle_);
-    opt->Update(key, NDArray(local), NDArray(recv), learning_rate);
+    opt->Update(key, NDArray(local), NDArray(recv));
   }
 }
 
-void KVStore::SetOptimizer(Optimizer& optimizer, real_t lr) {
-  private_::learning_rate = lr;
-  CHECK_EQ(MXKVStoreSetUpdater(handle_, &private_::updater, &optimizer), 0);
+void KVStore::SetOptimizer(std::unique_ptr<Optimizer> optimizer) {
+  if (GetType().substr(0, 4) == "dist" && GetRole() == "worker") {
+    CHECK_EQ(MXKVStoreSendCommmandToServers(handle_, 0, (*optimizer).Serialize().c_str()), 0);
+  } else {
+    optimizer_ = std::move(optimizer);
+    CHECK_EQ(MXKVStoreSetUpdater(handle_, &private_::updater, optimizer_.get()), 0);
+  }
 }
 
 std::string KVStore::GetType() const {
@@ -104,6 +141,21 @@ int KVStore::GetNumWorkers() const {
   int num_workers;
   CHECK_EQ(MXKVStoreGetGroupSize(handle_, &num_workers), 0);
   return num_workers;
+}
+
+std::string KVStore::GetRole() const {
+  int ret;
+  CHECK_EQ(MXKVStoreIsSchedulerNode(&ret), 0);
+  if (ret) {
+    return "scheduler";
+  }
+  CHECK_EQ(MXKVStoreIsServerNode(&ret), 0);
+  if (ret) {
+    return "server";
+  }
+  CHECK_EQ(MXKVStoreIsWorkerNode(&ret), 0);
+  CHECK(ret);
+  return "worker";
 }
 
 }  // namespace cpp
