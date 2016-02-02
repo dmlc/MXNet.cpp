@@ -5,15 +5,20 @@
  * \author Zhang Chen
  */
 
-#ifndef SYMBOL_HPP_RUBNTUY8
-#define SYMBOL_HPP_RUBNTUY8
+#ifndef MXNETCPP_SYMBOL_HPP
+#define MXNETCPP_SYMBOL_HPP
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include "MxNetCpp.h"
+
+#include "logging.h"
+#include "symbol.h"
+
 namespace mxnet {
 namespace cpp {
+Mxnet* Symbol::MxNet_ = new Mxnet();
 Symbol::Symbol(SymbolHandle handle) {
   blob_ptr_ = std::make_shared<SymBlob>(handle);
 }
@@ -29,7 +34,7 @@ Symbol::Symbol(const std::string &operator_name, const std::string &name,
                std::vector<const char *> config_keys,
                std::vector<const char *> config_values) {
   SymbolHandle handle;
-  AtomicSymbolCreator creator = MxNet->GetSymbolCreator(operator_name);
+  AtomicSymbolCreator creator = MxNet_->GetSymbolCreator(operator_name);
   MXSymbolCreateAtomicSymbol(creator, config_keys.size(), config_keys.data(),
                              config_values.data(), &handle);
   MXSymbolCompose(handle, operator_name.c_str(), input_keys.size(),
@@ -241,4 +246,4 @@ Executor *Symbol::Bind(const Context &context,
 }  // namespace cpp
 }  // namespace mxnet
 
-#endif /* end of include guard: SYMBOL_HPP_RUBNTUY8 */
+#endif // MXNETCPP_SYMBOL_HPP

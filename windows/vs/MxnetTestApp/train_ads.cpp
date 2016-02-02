@@ -143,7 +143,7 @@ private:
     const auto &out = exe->outputs;
     NDArray result = out[0].Copy(ctx_cpu);
     result.WaitToRead();
-    mx_float *pResult = result.GetData();
+    const mx_float *pResult = result.GetData();
     const mx_float *pLabel = labels.GetData();
     for (int i = 0; i < nSamples; ++i) {
       float label = pLabel[i];

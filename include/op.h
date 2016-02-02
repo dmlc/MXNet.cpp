@@ -4,8 +4,9 @@
 #include <string>
 #include <vector>
 #include "base.h"
+#include "operator.h"
 #include "shape.h"
-#include "MxNetCpp.h"
+#include "symbol.h"
 
 namespace mxnet {
 namespace cpp {

@@ -1,5 +1,9 @@
-#ifndef MXNETCPP_MXNET_H_
-#define MXNETCPP_MXNET_H_
+#ifndef MXNETCPP_MXNET_H
+#define MXNETCPP_MXNET_H
+
+#include <map>
+#include "base.h"
+#include "logging.h"
 
 namespace mxnet {
 namespace cpp {
@@ -52,4 +56,4 @@ private:
 }
 }
 
-#endif // MXNETCPP_MXNET_H_
+#endif // MXNETCPP_MXNET_H

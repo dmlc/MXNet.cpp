@@ -5,11 +5,12 @@
  * \author Zhang Chen
  */
 
-#ifndef NDARRAY_HPP_QJLSKOCA
-#define NDARRAY_HPP_QJLSKOCA
+#ifndef MXNETCPP_NDARRAY_HPP
+#define MXNETCPP_NDARRAY_HPP
 
 #include <vector>
-#include "MxNetCpp.h"
+#include "logging.h"
+#include "ndarray.h"
 
 namespace mxnet {
 namespace cpp {
@@ -262,11 +263,6 @@ std::vector<mx_uint> NDArray::GetShape() const {
   }
   return ret;
 }
-mx_float *NDArray::GetData() {
-  mx_float *ret;
-  MXNDArrayGetData(blob_ptr_->handle_, &ret);
-  return ret;
-}
 const mx_float *NDArray::GetData() const {
   mx_float *ret;
   MXNDArrayGetData(blob_ptr_->handle_, &ret);
@@ -282,4 +278,4 @@ Context NDArray::GetContext() const {
 }  // namespace mxnet
 
 
-#endif /* end of include guard: NDARRAY_HPP_QJLSKOCA */
+#endif // MXNETCPP_NDARRAY_HPP
