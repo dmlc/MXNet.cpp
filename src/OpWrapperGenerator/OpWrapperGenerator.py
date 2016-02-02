@@ -42,7 +42,7 @@ class EnumType:
 
 class Arg:
     typeDict = {'boolean':'bool',\
-        'Shape(tuple)':'mxnet::TShape',\
+        'Shape(tuple)':'Shape',\
         'Symbol':'Symbol',\
         'Symbol[]':'const std::vector<Symbol>&',\
         'float':'mx_float',\
@@ -78,7 +78,7 @@ class Arg:
             elif self.defaultString == 'True':
                 self.defaultString = 'true'
             elif self.defaultString[0] == '(':
-                self.defaultString = 'mshadow::Shape2' + self.defaultString
+                self.defaultString = 'Shape' + self.defaultString
 
     def ConstructEnumTypeName(self, opName = '', argName = ''):
         a = opName[0].upper()
@@ -298,7 +298,8 @@ if __name__ == "__main__":
                  "\n"
                  "#include <string>\n"
                  "#include <vector>\n"
-                 "#include \"mxnet/base.h\"\n"
+                 "#include \"base.h\"\n"
+                 "#include \"shape.h\"\n"
                  "#include \"MxNetCpp.h\"\n"
                  "\n"
                  "namespace mxnet {\n"
@@ -308,6 +309,6 @@ if __name__ == "__main__":
                  "} //namespace cpp\n"
                  "} //namespace mxnet\n"
                  "#endif //ifndef _MXNETOP_H\n")
-    with open('../../include/MxNetOp.h', 'w') as f:
+    with open('../../include/op.h', 'w') as f:
         f.write(patternStr % ParseAllOps())
     pass

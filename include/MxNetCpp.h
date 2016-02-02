@@ -8,32 +8,40 @@
 #ifndef MXNETCPP_H_
 #define MXNETCPP_H_
 
-#include <mxnet/base.h>
-#include <mxnet/operator.h>
-#include <mxnet/c_api.h>
+//#include <mxnet/base.h>
+//#include <mxnet/operator.h>
+
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
+#include "logging.h"
+#include "c_api.h"
 
 namespace mxnet {
 namespace cpp {
-/*!
- * \brief transform TShape to mx_uint vector
- *
- * \param shape the original TShape
- * \return the vector of mx_uint, with shape.ndim elements
- */
-inline std::vector<mx_uint> ShapeToMxuintVec(const mshadow::TShape &shape) {
-  std::vector<mx_uint> ret;
-  for (size_t i = 0; i < shape.ndim(); ++i) {
-    ret.push_back(shape.data()[i]);
-  }
-  return ret;
-}
 
-using OpReqType = mxnet::OpReqType;
-using DeviceType = mxnet::Context::DeviceType;
+enum OpReqType {
+  /*! \brief no operation, do not write anything */
+  kNullOp,
+  /*! \brief write gradient to provided space */
+  kWriteTo,
+  /*!
+  * \brief perform an inplace write,
+  * Target shares memory with one of input arguments.
+  * This option only happen when
+  */
+  kWriteInplace,
+  /*! \brief add to the provided space */
+  kAddTo
+};
+
+enum DeviceType {
+  kCPU = 1,
+  kGPU = 2,
+  kCPUPinned = 3
+};
 
 class Mxnet;
 class Symbol;
@@ -115,22 +123,15 @@ class NDArray {
    */
   NDArray(const std::vector<mx_uint> &shape, const Context &context,
           bool delay_alloc = true);
-  /*!
-   * \brief construct a new dynamic NDArray
-   * \param shape the shape of array
-   * \param constext context of NDArray
-   * \param delay_alloc whether delay the allocation
-   */
-  NDArray(mshadow::TShape shape, const Context &context,
-          bool delay_alloc = true);
+
   NDArray(const mx_float *data, size_t size);
   explicit NDArray(const std::vector<mx_float> &data);
   // TODO(zhangcheng-qinyinghua)
   // implement all the operators
-  NDArray operator+(real_t scalar);
-  NDArray operator-(real_t scalar);
-  NDArray operator*(real_t scalar);
-  NDArray operator/(real_t scalar);
+  NDArray operator+(mx_float scalar);
+  NDArray operator-(mx_float scalar);
+  NDArray operator*(mx_float scalar);
+  NDArray operator/(mx_float scalar);
   NDArray operator+(const NDArray &);
   NDArray operator-(const NDArray &);
   NDArray operator*(const NDArray &);
@@ -140,35 +141,35 @@ class NDArray {
    * \param scalar the scalar to set
    * \return reference of self
    */
-  NDArray &operator=(real_t scalar);
+  NDArray &operator=(mx_float scalar);
   /*!
    * \brief elementwise add to current space
    *  this mutate the current NDArray
    * \param scalar the data to add
    * \return reference of self
    */
-  NDArray &operator+=(real_t scalar);
+  NDArray &operator+=(mx_float scalar);
   /*!
    * \brief elementwise subtract from current ndarray
    * this mutate the current NDArray
    * \param scalar the data to substract
    * \return reference of self
    */
-  NDArray &operator-=(real_t scalar);
+  NDArray &operator-=(mx_float scalar);
   /*!
    * \brief elementwise multiplication to current ndarray
    *  this mutate the current NDArray
    * \param scalar the data to substract
    * \return reference of self
    */
-  NDArray &operator*=(real_t scalar);
+  NDArray &operator*=(mx_float scalar);
   /*!
    * \brief elementwise division from current ndarray
    *  this mutate the current NDArray
    * \param scalar the data to substract
    * \return reference of self
    */
-  NDArray &operator/=(real_t scalar);
+  NDArray &operator/=(mx_float scalar);
   /*!
    * \brief elementwise add to current space
    *  this mutate the current NDArray
@@ -263,14 +264,14 @@ class NDArray {
    * \param sigma standard deviation of gaussian distribution.
    * \param out output NDArray.
    */
-  static void SampleGaussian(real_t mu, real_t sigma, NDArray *out);
+  static void SampleGaussian(mx_float mu, mx_float sigma, NDArray *out);
   /*!
    * \brief Sample uniform distribution for each elements of out.
    * \param begin lower bound of distribution.
    * \param end upper bound of distribution.
    * \param out output NDArray.
    */
-  static void SampleUniform(real_t begin, real_t end, NDArray *out);
+  static void SampleUniform(mx_float begin, mx_float end, NDArray *out);
   /*!
    * \return the shape of current NDArray, in the form of mx_uint vector
    */
@@ -666,10 +667,10 @@ class Optimizer {
    *  \param grad gradient for the weight.
    *  \param lr learning rate for this update.
    */
-  void Update(int index, NDArray weight, NDArray grad, real_t lr);
+  void Update(int index, NDArray weight, NDArray grad, mx_float lr);
   // TODO(zhangcheng-qinyinghua)
   // implement Update a list of arrays, maybe in the form of map
-  //void Update(int index, std::vector<NDArray> weights, std::vector<NDArray> grad, real_t lr);
+  //void Update(int index, std::vector<NDArray> weights, std::vector<NDArray> grad, mx_float lr);
 
  private:
   bool init_;

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <string>
+
 //----------------------------
 // command line
 inline bool CmdOptionExists(int argc, char ** argv, const std::string& option)
@@ -67,3 +69,10 @@ private:
   int argc;
   char ** argv;
 };
+
+inline double get_time()
+{
+  using namespace std::chrono;
+  high_resolution_clock::duration tp = high_resolution_clock::now().time_since_epoch();
+  return (double)tp.count() * high_resolution_clock::period::num / high_resolution_clock::period::den;
+}

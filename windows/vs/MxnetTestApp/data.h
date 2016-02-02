@@ -7,7 +7,7 @@
 #include <thread>
 #include <vector>
 
-#include <dmlc/logging.h>
+#include "logging.h"
 
 class DataReader {
 public:

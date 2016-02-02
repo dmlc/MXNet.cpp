@@ -105,7 +105,7 @@ Optimizer::Optimizer(const std::string &opt_type) {
   MXOptimizerFindCreator(opt_type.c_str(), &creator_);
   init_ = false;
 }
-void Optimizer::Update(int index, NDArray weight, NDArray grad, real_t lr) {
+void Optimizer::Update(int index, NDArray weight, NDArray grad, mx_float lr) {
   if (!init_) {
     std::vector<const char *> param_keys;
     std::vector<const char *> param_values;
