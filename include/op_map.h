@@ -1,3 +1,10 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file op_map.h
+* \brief definition of OpMap
+* \author Chuntao Hong
+*/
+
 #ifndef MXNETCPP_MXNET_H
 #define MXNETCPP_MXNET_H
 
@@ -9,16 +16,16 @@ namespace mxnet {
 namespace cpp {
 
 /*!
-* \brief Mxnet instance holds a map of all the symbol creators so we can
+* \brief OpMap instance holds a map of all the symbol creators so we can
 *  get symbol creators by name.
 *  This is used internally by Symbol and Operator.
 */
-class Mxnet {
+class OpMap {
 public:
   /*!
   * \brief Create an Mxnet instance
   */
-  inline Mxnet() {
+  inline OpMap() {
     mx_uint num_symbol_creators = 0;
     AtomicSymbolCreator *symbol_creators = nullptr;
     int r =

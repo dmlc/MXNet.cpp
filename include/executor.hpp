@@ -2,7 +2,7 @@
  *  Copyright (c) 2016 by Contributors
  * \file executor.hpp
  * \brief implementation of the executor
- * \author Zhang Chen
+ * \author Zhang Chen, Chuntao Hong
  */
 
 #ifndef MXNETCPP_EXECUTOR_HPP

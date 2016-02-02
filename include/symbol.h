@@ -1,9 +1,16 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file symbol.h
+* \brief definition of symbol
+* \author Chuntao Hong, Zhang Chen
+*/
+
 #ifndef MXNETCPP_SYMBOL_H
 #define MXNETCPP_SYMBOL_H
 
 #include "base.h"
-#include "mxnet.h"
 #include "ndarray.h"
+#include "op_map.h"
 
 namespace mxnet {
 namespace cpp {
@@ -170,7 +177,7 @@ public:
 
 private:
   std::shared_ptr<SymBlob> blob_ptr_;
-  static Mxnet* MxNet_;
+  static OpMap* op_map_;
 };
 
 }

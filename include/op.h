@@ -1,12 +1,18 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file op.h
+* \brief definition of all the operators
+* \author Chuntao Hong
+*/
+
 #ifndef _MXNETOP_H
 #define _MXNETOP_H
 
 #include <string>
 #include <vector>
 #include "base.h"
-#include "operator.h"
 #include "shape.h"
-#include "symbol.h"
+#include "MxNetCpp.h"
 
 namespace mxnet {
 namespace cpp {

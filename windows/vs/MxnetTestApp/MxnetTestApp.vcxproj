@@ -25,7 +25,6 @@
     <ClInclude Include="..\..\..\include\executor.hpp" />
     <ClInclude Include="..\..\..\include\kvstore.h" />
     <ClInclude Include="..\..\..\include\logging.h" />
-    <ClInclude Include="..\..\..\include\mxnet.h" />
     <ClInclude Include="..\..\..\include\MxNetCpp.h" />
     <ClInclude Include="..\..\..\include\ndarray.h" />
     <ClInclude Include="..\..\..\include\ndarray.hpp" />
@@ -34,6 +33,7 @@
     <ClInclude Include="..\..\..\include\operator.hpp" />
     <ClInclude Include="..\..\..\include\optimizer.h" />
     <ClInclude Include="..\..\..\include\optimizer.hpp" />
+    <ClInclude Include="..\..\..\include\op_map.h" />
     <ClInclude Include="..\..\..\include\shape.h" />
     <ClInclude Include="..\..\..\include\symbol.h" />
     <ClInclude Include="..\..\..\include\symbol.hpp" />

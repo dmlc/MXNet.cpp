@@ -2,7 +2,7 @@
  *  Copyright (c) 2016 by Contributors
  * \file symbol.hpp
  * \brief implementation of the symbol
- * \author Zhang Chen
+ * \author Zhang Chen, Chuntao Hong
  */
 
 #ifndef MXNETCPP_SYMBOL_HPP
@@ -18,7 +18,7 @@
 
 namespace mxnet {
 namespace cpp {
-Mxnet* Symbol::MxNet_ = new Mxnet();
+OpMap* Symbol::op_map_ = new OpMap();
 Symbol::Symbol(SymbolHandle handle) {
   blob_ptr_ = std::make_shared<SymBlob>(handle);
 }
@@ -34,7 +34,7 @@ Symbol::Symbol(const std::string &operator_name, const std::string &name,
                std::vector<const char *> config_keys,
                std::vector<const char *> config_values) {
   SymbolHandle handle;
-  AtomicSymbolCreator creator = MxNet_->GetSymbolCreator(operator_name);
+  AtomicSymbolCreator creator = op_map_->GetSymbolCreator(operator_name);
   MXSymbolCreateAtomicSymbol(creator, config_keys.size(), config_keys.data(),
                              config_values.data(), &handle);
   MXSymbolCompose(handle, operator_name.c_str(), input_keys.size(),

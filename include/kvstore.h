@@ -1,9 +1,15 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file kvstore.h
+* \brief definition of kvstore
+* \author Chuntao Hong
+*/
+
 #ifndef MXNETCPP_KVSTORE_H
 #define MXNETCPP_KVSTORE_H
 
 #include <string>
-#include "ndarray.hpp"
-#include "mxnet/c_api.h"
+#include "ndarray.h"
 
 namespace mxnet {
 namespace cpp {
@@ -23,9 +29,7 @@ private:
   const char* TYPE_STRINGS[] = {"dist", "local"};
 };
 
-
 }
 }
-
 
 #endif // MXNETCPP_KVSTORE_H

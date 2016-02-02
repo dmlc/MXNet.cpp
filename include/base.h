@@ -1,3 +1,10 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file base.h
+* \brief base definitions for mxnetcpp
+* \author Chuntao Hong, Zhang Chen
+*/
+
 #ifndef MXNETCPP_BASE_H
 #define MXNETCPP_BASE_H
 

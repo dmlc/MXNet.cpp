@@ -1,8 +1,16 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file operator.h
+* \brief definition of operator
+* \author Chuntao Hong, Zhang Chen
+*/
+
 #ifndef MXNETCPP_OPERATOR_H
 #define MXNETCPP_OPERATOR_H
 
 #include <string>
 #include "base.h"
+#include "op_map.h"
 #include "symbol.h"
 
 namespace mxnet {
@@ -105,7 +113,7 @@ private:
   std::vector<SymbolHandle> input_values;
   std::vector<std::string> input_keys;
   AtomicSymbolCreator handle_;
-  static Mxnet* MxNet_;
+  static OpMap* op_map_;
 };
 }
 }

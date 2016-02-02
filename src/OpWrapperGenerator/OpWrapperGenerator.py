@@ -293,7 +293,14 @@ if __name__ == "__main__":
     #print(decl)
 
     # generate file header
-    patternStr = ("#ifndef _MXNETOP_H\n"
+    patternStr = ("/*!\n"
+                 "*  Copyright (c) 2016 by Contributors\n"
+                 "* \\file op.h\n"
+                 "* \\brief definition of all the operators\n"
+                 "* \\author Chuntao Hong\n"
+                 "*/\n"
+                 "\n"      
+                 "#ifndef _MXNETOP_H\n"
                  "#define _MXNETOP_H\n"
                  "\n"
                  "#include <string>\n"

@@ -1,17 +1,24 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file operator.hpp
+* \brief implementation of operator
+* \author Chuntao Hong, Zhang Chen
+*/
+
 #ifndef MXNETCPP_OPERATOR_HPP
 #define MXNETCPP_OPERATOR_HPP
 
 #include <string>
 #include "base.h"
-#include "mxnet.h"
+#include "op_map.h"
 #include "operator.h"
 
 namespace mxnet {
 namespace cpp {
-Mxnet* Operator::MxNet_ = new Mxnet();
+OpMap* Operator::op_map_ = new OpMap();
 
 Operator::Operator(const std::string &operator_name) {
-  handle_ = MxNet_->GetSymbolCreator(operator_name);
+  handle_ = op_map_->GetSymbolCreator(operator_name);
 }
 
 Symbol Operator::CreateSymbol(const std::string &name) {

@@ -2,7 +2,7 @@
  *  Copyright (c) 2016 by Contributors
  * \file ndarray.hpp
  * \brief implementation of the ndarray
- * \author Zhang Chen
+ * \author Zhang Chen, Chuntao Hong
  */
 
 #ifndef MXNETCPP_NDARRAY_HPP

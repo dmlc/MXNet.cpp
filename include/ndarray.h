@@ -1,3 +1,10 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file ndarray.h
+* \brief definition of ndarray
+* \author Chuntao Hong, Zhang Chen
+*/
+
 #ifndef MXNETCPP_NDARRAY_H
 #define MXNETCPP_NDARRAY_H
 
