@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include "base.h"
+#include "shape.h"
 
 namespace mxnet {
 namespace cpp {
@@ -95,6 +96,14 @@ public:
   * \param delay_alloc whether delay the allocation
   */
   NDArray(const std::vector<mx_uint> &shape, const Context &context,
+    bool delay_alloc = true);
+  /*!
+  * \brief construct a new dynamic NDArray
+  * \param shape the shape of array
+  * \param constext context of NDArray
+  * \param delay_alloc whether delay the allocation
+  */
+  NDArray(const Shape &shape, const Context &context,
     bool delay_alloc = true);
 
   NDArray(const mx_float *data, size_t size);

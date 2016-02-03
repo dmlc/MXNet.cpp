@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <vector>
-#include <mxnet/ndarray.h>
 #include "MxNetCpp.h"
 
 using namespace std;
@@ -16,7 +15,7 @@ using namespace mxnet::cpp;
  * and try to use MLP to recognize the pattern.
  */
 
-void OutputAccuracy(mxnet::real_t* pred, mxnet::real_t* target) {
+void OutputAccuracy(mx_float* pred, mx_float* target) {
   int right = 0;
   for (int i = 0; i < 128; ++i) {
     float mx_p = pred[i * 10 + 0];
@@ -55,11 +54,11 @@ void MLP() {
 
   Context ctx_dev(DeviceType::kCPU, 0);
 
-  NDArray array_x(mshadow::Shape2(128, 28), ctx_dev, false);
-  NDArray array_y(mshadow::Shape1(128), ctx_dev, false);
+  NDArray array_x(Shape(128, 28), ctx_dev, false);
+  NDArray array_y(Shape(128), ctx_dev, false);
 
-  mxnet::real_t* aptr_x = new mxnet::real_t[128 * 28];
-  mxnet::real_t* aptr_y = new mxnet::real_t[128];
+  mx_float* aptr_x = new mx_float[128 * 28];
+  mx_float* aptr_y = new mx_float[128];
 
   // we make the data by hand, in 10 classes, with some pattern
   for (int i = 0; i < 128; i++) {
@@ -74,10 +73,10 @@ void MLP() {
   array_y.WaitToRead();
 
   // init the parameters
-  NDArray array_w_1(mshadow::Shape2(512, 28), ctx_dev, false);
-  NDArray array_b_1(mshadow::Shape1(512), ctx_dev, false);
-  NDArray array_w_2(mshadow::Shape2(10, 512), ctx_dev, false);
-  NDArray array_b_2(mshadow::Shape1(10), ctx_dev, false);
+  NDArray array_w_1(Shape(512, 28), ctx_dev, false);
+  NDArray array_b_1(Shape(512), ctx_dev, false);
+  NDArray array_w_2(Shape(10, 512), ctx_dev, false);
+  NDArray array_b_2(Shape(10), ctx_dev, false);
 
   // the parameters should be initialized in some kind of distribution,
   // so it learns fast
@@ -88,10 +87,10 @@ void MLP() {
   array_b_2 = 0.0f;
 
   // the grads
-  NDArray array_w_1_g(mshadow::Shape2(512, 28), ctx_dev, false);
-  NDArray array_b_1_g(mshadow::Shape1(512), ctx_dev, false);
-  NDArray array_w_2_g(mshadow::Shape2(10, 512), ctx_dev, false);
-  NDArray array_b_2_g(mshadow::Shape1(10), ctx_dev, false);
+  NDArray array_w_1_g(Shape(512, 28), ctx_dev, false);
+  NDArray array_b_1_g(Shape(512), ctx_dev, false);
+  NDArray array_w_2_g(Shape(10, 512), ctx_dev, false);
+  NDArray array_b_2_g(Shape(10), ctx_dev, false);
 
   // Bind the symolic network with the ndarray
   // all the input args
@@ -112,13 +111,13 @@ void MLP() {
   arg_grad_store.push_back(
       NDArray());  // neither do we need the grad of the loss
   // how to handle the grad
-  std::vector<mxnet::OpReqType> grad_req_type;
-  grad_req_type.push_back(mxnet::kNullOp);
-  grad_req_type.push_back(mxnet::kWriteTo);
-  grad_req_type.push_back(mxnet::kWriteTo);
-  grad_req_type.push_back(mxnet::kWriteTo);
-  grad_req_type.push_back(mxnet::kWriteTo);
-  grad_req_type.push_back(mxnet::kNullOp);
+  std::vector<OpReqType> grad_req_type;
+  grad_req_type.push_back(kNullOp);
+  grad_req_type.push_back(kWriteTo);
+  grad_req_type.push_back(kWriteTo);
+  grad_req_type.push_back(kWriteTo);
+  grad_req_type.push_back(kWriteTo);
+  grad_req_type.push_back(kNullOp);
   std::vector<NDArray> aux_states;
 
   cout << "make the Executor" << endl;
@@ -127,7 +126,7 @@ void MLP() {
 
   cout << "Training" << endl;
   int max_iters = 20000;
-  mxnet::real_t learning_rate = 0.0001;
+  mx_float learning_rate = 0.0001;
   for (int iter = 0; iter < max_iters; ++iter) {
     exe->Forward(true);
 

@@ -32,22 +32,22 @@ class Lenet {
     Symbol fc2_w("fc2_w"), fc2_b("fc2_b");
 
     Symbol conv1 =
-        Convolution("conv1", data, conv1_w, conv1_b, mshadow::Shape2(5, 5), 20);
+        Convolution("conv1", data, conv1_w, conv1_b, Shape(5, 5), 20);
     Symbol tanh1 = Activation("tanh1", conv1, ActivationActType::tanh);
-    Symbol pool1 = Pooling("pool1", tanh1, mshadow::Shape2(2, 2),
-                           PoolingPoolType::max, mshadow::Shape2(2, 2));
+    Symbol pool1 = Pooling("pool1", tanh1, Shape(2, 2),
+      PoolingPoolType::max, Shape(2, 2));
 
     Symbol conv2 = Convolution("conv2", pool1, conv2_w, conv2_b,
-                               mshadow::Shape2(5, 5), 50);
+      Shape(5, 5), 50);
     Symbol tanh2 = Activation("tanh2", conv2, ActivationActType::tanh);
-    Symbol pool2 = Pooling("pool2", tanh2, mshadow::Shape2(2, 2),
-                           PoolingPoolType::max, mshadow::Shape2(2, 2));
+    Symbol pool2 = Pooling("pool2", tanh2, Shape(2, 2),
+      PoolingPoolType::max, Shape(2, 2));
 
     Symbol conv3 = Convolution("conv3", pool2, conv3_w, conv3_b,
-                               mshadow::Shape2(2, 2), 500);
+      Shape(2, 2), 500);
     Symbol tanh3 = Activation("tanh3", conv3, ActivationActType::tanh);
-    Symbol pool3 = Pooling("pool3", tanh3, mshadow::Shape2(2, 2),
-                           PoolingPoolType::max, mshadow::Shape2(1, 1));
+    Symbol pool3 = Pooling("pool3", tanh3, Shape(2, 2),
+      PoolingPoolType::max, Shape(1, 1));
 
     Symbol flatten = Flatten("flatten", pool3);
     Symbol fc1 = FullyConnected("fc1", flatten, fc1_w, fc1_b, 500);
@@ -73,11 +73,11 @@ class Lenet {
     size_t data_count = GetData(&data_vec, &label_vec);
     const float *dptr = data_vec.data();
     const float *lptr = label_vec.data();
-    NDArray data_array = NDArray(mshadow::Shape4(data_count, 1, W, H), ctx_cpu,
+    NDArray data_array = NDArray(Shape(data_count, 1, W, H), ctx_cpu,
                                  false);  // store in main memory, and copy to
     // device memory while training
     NDArray label_array =
-        NDArray(mshadow::Shape1(data_count), ctx_cpu,
+      NDArray(Shape(data_count), ctx_cpu,
                 false);  // it's also ok if just store them all in device memory
     data_array.SyncCopyFromCPU(dptr, data_count * W * H);
     label_array.SyncCopyFromCPU(lptr, data_count);
@@ -95,7 +95,7 @@ class Lenet {
     /*init some of the args*/
     // map<string, NDArray> args_map;
     args_map["data"] =
-        NDArray(mshadow::Shape4(batch_size, 1, W, H), ctx_dev, false);
+      NDArray(Shape(batch_size, 1, W, H), ctx_dev, false);
     args_map["data"] = data_array.Slice(0, batch_size).Copy(ctx_dev);
     args_map["data_label"] = label_array.Slice(0, batch_size).Copy(ctx_dev);
     NDArray::WaitAll();
@@ -204,8 +204,8 @@ class Lenet {
 
       NDArray::WaitAll();
 
-      mxnet::real_t *dptr_out = out_cpu.GetData();
-      mxnet::real_t *dptr_label = label_cpu.GetData();
+      const mx_float *dptr_out = out_cpu.GetData();
+      const mx_float *dptr_label = label_cpu.GetData();
       for (int i = 0; i < batch_size; ++i) {
         float label = dptr_label[i];
         int cat_num = out_cpu.GetShape()[1];

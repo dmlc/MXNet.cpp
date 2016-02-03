@@ -175,20 +175,6 @@ public:
       std::copy(s.data_heap_, s.data_heap_ + ndim_, data_heap_);
     }
   }
-  /*!
-  * \brief construct the Shape from content of iterator
-  * \param begin the beginning of iterator
-  * \param end end the end of the iterator
-  * \tparam RandomAccessIterator iterator type
-  */
-  template<typename RandomAccessIterator>
-  Shape(RandomAccessIterator begin,
-    RandomAccessIterator end)
-    : ndim_(0),
-    num_heap_allocated_(0),
-    data_heap_(NULL) {
-    this->CopyFrom(begin, end);
-  }
 #if MSHADOW_IN_CXX11
   /*!
   * \brief move constructor from Shape
@@ -337,6 +323,73 @@ private:
     ndim_ = dim;
   }
 };
+
+/*!
+* \brief allow string printing of the shape
+* \param os the output stream
+* \param shape the shape
+* \return the ostream
+*/
+inline std::ostream &operator<<(std::ostream &os, const Shape &shape) {
+  os << '(';
+  for (index_t i = 0; i < shape.ndim(); ++i) {
+    if (i != 0) os << ',';
+    os << shape[i];
+  }
+  // python style tuple
+  if (shape.ndim() == 1) os << ',';
+  os << ')';
+  return os;
+}
+
+/*!
+* \brief read shape from the istream
+* \param is the input stream
+* \param shape the shape
+* \return the istream
+*/
+inline std::istream &operator>>(std::istream &is, Shape &shape) {
+  // get (
+  while (true) {
+    char ch = is.get();
+    if (ch == '(') break;
+    if (!isspace(ch)) {
+      is.setstate(std::ios::failbit);
+      return is;
+    }
+  }
+  index_t idx;
+  std::vector<index_t> tmp;
+  while (is >> idx) {
+    tmp.push_back(idx);
+    char ch;
+    do {
+      ch = is.get();
+    } while (isspace(ch));
+    if (ch == ',') {
+      while (true) {
+        ch = is.peek();
+        if (isspace(ch)) {
+          is.get(); continue;
+        }
+        if (ch == ')') {
+          is.get(); break;
+        }
+        break;
+      }
+      if (ch == ')') break;
+    }
+    else if (ch == ')') {
+      break;
+    }
+    else {
+      is.setstate(std::ios::failbit);
+      return is;
+    }
+  }
+  shape.CopyFrom(tmp.begin(), tmp.end());
+  return is;
+}
 
 }
 }
