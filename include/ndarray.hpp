@@ -14,6 +14,7 @@
 
 namespace mxnet {
 namespace cpp {
+	
 NDArray::NDArray() {
   NDArrayHandle handle;
   CHECK_EQ(MXNDArrayCreateNone(&handle), 0);
@@ -259,6 +260,27 @@ void NDArray::SampleUniform(mx_float begin, mx_float end, NDArray *out) {
   mx_float scalar[2] = {begin, end};
   CHECK_EQ(MXFuncInvoke(func_handle, nullptr, scalar, &out->blob_ptr_->handle_),
            0);
+}
+
+size_t NDArray::Offset(size_t h, size_t w) const
+{    
+  return (h * GetShape()[1]) + w;
+}
+
+size_t NDArray::Offset(size_t c, size_t h, size_t w) const
+{
+  auto const shape = GetShape();
+  return h * shape[0] * shape[2] + w * shape[0] + c;
+} 
+
+mx_float NDArray::At(size_t h, size_t w) const
+{
+  return GetData()[Offset(h,w)];
+}
+
+mx_float NDArray::At(size_t c, size_t h, size_t w) const
+{
+  return GetData()[Offset(c,h,w)];
 }
 
 std::vector<mx_uint> NDArray::GetShape() const {
