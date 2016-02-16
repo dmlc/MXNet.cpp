@@ -275,7 +275,7 @@ public:
   /*!
   * \return the data pointer to the current NDArray
   */
-  const mx_float *NDArray::GetData() const;
+  const mx_float* GetData() const;
 
   /*!
   * \return the context of NDArray
