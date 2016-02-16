@@ -263,7 +263,7 @@ void NDArray::SampleUniform(mx_float begin, mx_float end, NDArray *out) {
 }
 
 size_t NDArray::Offset(size_t h, size_t w) const
-{    
+{
   return (h * GetShape()[1]) + w;
 }
 
@@ -271,7 +271,7 @@ size_t NDArray::Offset(size_t c, size_t h, size_t w) const
 {
   auto const shape = GetShape();
   return h * shape[0] * shape[2] + w * shape[0] + c;
-} 
+}
 
 mx_float NDArray::At(size_t h, size_t w) const
 {

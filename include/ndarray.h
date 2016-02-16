@@ -232,7 +232,7 @@ public:
    * \param w width position
    * \return offset of three dimensions array
    */
-  size_t Offset(size_t c, size_t h, size_t w) const;  
+  size_t Offset(size_t c, size_t h, size_t w) const;
   /*!
   * \brief return value of the element at (h, w)
   * \param h height position
@@ -247,7 +247,7 @@ public:
    * \param w width position
    * \return value of three dimensions array
    */
-  mx_float At(size_t c, size_t h, size_t w) const;  
+  mx_float At(size_t c, size_t h, size_t w) const;
   /*!
   * \brief Slice a NDArray
   * \param begin begin index in first dim
@@ -303,7 +303,7 @@ public:
   */
   NDArrayHandle GetHandle() const { return blob_ptr_->handle_; }
 
-private:  
+private:
   std::shared_ptr<NDBlob> blob_ptr_;
 };
 
