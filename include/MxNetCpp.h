@@ -720,5 +720,6 @@ private:
 #include "symbol.hpp"
 #include "ndarray.hpp"
 #include "kvstore.hpp"
+#include "op.h"
 
 #endif  // MXNETCPP_H_

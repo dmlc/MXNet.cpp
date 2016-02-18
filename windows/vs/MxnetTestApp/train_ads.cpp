@@ -12,7 +12,6 @@
 #include <numeric>
 
 #include "MxNetCpp.h"
-#include "MxNetOp.h"
 #include "util.h"
 #include "data.h"
 using namespace std;
