@@ -115,7 +115,6 @@ class Lenet {
     lenet.InferArgsMap(ctx_dev, &args_map, args_map);
     Optimizer opt("ccsgd");
     opt.SetParam("momentum", 0.9)
-        .SetParam("wd", 1e-4)
         .SetParam("rescale_grad", 1.0)
         .SetParam("clip_gradient", 10);
 
