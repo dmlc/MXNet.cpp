@@ -226,12 +226,28 @@ public:
   */
   size_t Offset(size_t h = 0, size_t w = 0) const;
   /*!
+   * \brief return offset of three dimensions array
+   * \param c channel position
+   * \param h height position
+   * \param w width position
+   * \return offset of three dimensions array
+   */
+  size_t Offset(size_t c, size_t h, size_t w) const;
+  /*!
   * \brief return value of the element at (h, w)
   * \param h height position
   * \param w width position
   * \return value of two dimensions array
   */
   mx_float At(size_t h, size_t w) const;
+  /*!
+   * \brief return value of three dimensions array
+   * \param c channel position
+   * \param h height position
+   * \param w width position
+   * \return value of three dimensions array
+   */
+  mx_float At(size_t c, size_t h, size_t w) const;
   /*!
   * \brief Slice a NDArray
   * \param begin begin index in first dim
