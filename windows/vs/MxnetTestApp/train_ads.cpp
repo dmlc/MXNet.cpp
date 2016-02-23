@@ -68,9 +68,8 @@ public:
       return;
     }
 
-    std::unique_ptr<Optimizer> opt(new Optimizer("ccsgd", learning_rate));
+    std::unique_ptr<Optimizer> opt(new Optimizer("ccsgd", learning_rate, weight_decay));
     (*opt).SetParam("momentum", 0.9)
-      .SetParam("wd", 0.00001)
       .SetParam("rescale_grad", 1.0 / (kv.GetNumWorkers() * batchSize));
       //.SetParam("clip_gradient", 10);
     kv.SetOptimizer(std::move(opt));
@@ -150,6 +149,7 @@ private:
   const static int maxEpoch = 5;
   const int workerIndex;
   float learning_rate = 0.01;
+  float weight_decay = 1e-5;
 
   float ValAccuracy(Symbol mlp, 
     const NDArray& samples, 

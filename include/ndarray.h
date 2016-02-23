@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 #include "base.h"
 #include "shape.h"
 
@@ -26,14 +27,13 @@ enum DeviceType {
 * \brief Context interface
 */
 class Context {
-public:
+ public:
   /*!
   * \brief Context constructor
   * \param type type of the device
   * \param id id of the device
   */
-  Context(const DeviceType &type, int id)
-    : type_(type), id_(id) {}
+  Context(const DeviceType &type, int id) : type_(type), id_(id) {}
   /*!
   * \return the type of the device
   */
@@ -43,7 +43,7 @@ public:
   */
   int GetDeviceId() const { return id_; }
 
-private:
+ private:
   DeviceType type_;
   int id_;
 };
@@ -52,7 +52,7 @@ private:
 * \brief struct to store NDArrayHandle
 */
 struct NDBlob {
-public:
+ public:
   /*!
   * \brief default constructor
   */
@@ -71,7 +71,7 @@ public:
   */
   NDArrayHandle handle_;
 
-private:
+ private:
   NDBlob(const NDBlob &);
   NDBlob &operator=(const NDBlob &);
 };
@@ -80,7 +80,7 @@ private:
 * \brief NDArray interface
 */
 class NDArray {
-public:
+ public:
   /*!
   * \brief construct with a none handle
   */
@@ -96,15 +96,14 @@ public:
   * \param delay_alloc whether delay the allocation
   */
   NDArray(const std::vector<mx_uint> &shape, const Context &context,
-    bool delay_alloc = true);
+          bool delay_alloc = true);
   /*!
   * \brief construct a new dynamic NDArray
   * \param shape the shape of array
   * \param constext context of NDArray
   * \param delay_alloc whether delay the allocation
   */
-  NDArray(const Shape &shape, const Context &context,
-    bool delay_alloc = true);
+  NDArray(const Shape &shape, const Context &context, bool delay_alloc = true);
 
   NDArray(const mx_float *data, size_t size);
   explicit NDArray(const std::vector<mx_float> &data);
@@ -158,28 +157,28 @@ public:
   * \param src the data to add
   * \return reference of self
   */
-  NDArray &operator+=(const NDArray & src);
+  NDArray &operator+=(const NDArray &src);
   /*!
   * \brief elementwise subtract from current ndarray
   * this mutate the current NDArray
   * \param src the data to substract
   * \return reference of self
   */
-  NDArray &operator-=(const NDArray & src);
+  NDArray &operator-=(const NDArray &src);
   /*!
   * \brief elementwise multiplication to current ndarray
   *  this mutate the current NDArray
   * \param src the data to substract
   * \return reference of self
   */
-  NDArray &operator*=(const NDArray & src);
+  NDArray &operator*=(const NDArray &src);
   /*!
   * \brief elementwise division from current ndarray
   *  this mutate the current NDArray
   * \param src the data to substract
   * \return reference of self
   */
-  NDArray &operator/=(const NDArray & src);
+  NDArray &operator/=(const NDArray &src);
   /*!
   * \brief Do a synchronize copy from a continugous CPU memory region.
   *
@@ -285,13 +284,50 @@ public:
   */
   static void SampleUniform(mx_float begin, mx_float end, NDArray *out);
   /*!
+  * \brief Load NDArrays from binary file.
+  * \param file_name name of the binary file.
+  * \param array_list a list of NDArrays returned, do not fill the list if
+  * nullptr is given.
+  * \param array_map a map from names to NDArrays returned, do not fill the map
+  * if nullptr is given or no names is stored in binary file.
+  */
+  static void Load(const std::string &file_name,
+                   std::vector<NDArray> *array_list = nullptr,
+                   std::map<std::string, NDArray> *array_map = nullptr);
+  /*!
+  * \brief Load map of NDArrays from binary file.
+  * \param file_name name of the binary file.
+  * \return a list of NDArrays.
+  */
+  static std::map<std::string, NDArray> LoadToMap(const std::string &file_name);
+  /*!
+  * \brief Load list of NDArrays from binary file.
+  * \param file_name name of the binary file.
+  * \return a map from names to NDArrays.
+  */
+  static std::vector<NDArray> LoadToList(const std::string &file_name);
+  /*!
+  * \brief save a map of string->NDArray to binary file.
+  * \param file_name name of the binary file.
+  * \param array_map a map from names to NDArrays.
+  */
+  static void Save(const std::string &file_name,
+                   const std::map<std::string, NDArray> &array_map);
+  /*!
+  * \brief save a list of NDArrays to binary file.
+  * \param file_name name of the binary file.
+  * \param array_list a list of NDArrays.
+  */
+  static void Save(const std::string &file_name,
+                   const std::vector<NDArray> &array_list);
+  /*!
   * \return the shape of current NDArray, in the form of mx_uint vector
   */
   std::vector<mx_uint> GetShape() const;
   /*!
   * \return the data pointer to the current NDArray
   */
-  const mx_float* GetData() const;
+  const mx_float *GetData() const;
 
   /*!
   * \return the context of NDArray
@@ -303,11 +339,10 @@ public:
   */
   NDArrayHandle GetHandle() const { return blob_ptr_->handle_; }
 
-private:
+ private:
   std::shared_ptr<NDBlob> blob_ptr_;
 };
-
 }
 }
 
-#endif // MXNETCPP_NDARRAY_H
+#endif  // MXNETCPP_NDARRAY_H

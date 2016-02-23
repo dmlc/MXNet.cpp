@@ -20,13 +20,14 @@ namespace cpp {
 * \brief Optimizer interface
 */
 class Optimizer {
-public:
+ public:
   /*!
-  * \brief Operator constructor, the optimizer is not initialized until the first Update
+  * \brief Operator constructor, the optimizer is not initialized until the
+  * first Update
   * \param opt_type type of the optimizer
   * \param learning_rate
   */
-  Optimizer(const std::string &opt_type, mx_float learning_rate);
+  Optimizer(const std::string &opt_type, mx_float learning_rate, mx_float weight_decay);
   /*!
   * \brief destructor, free the handle
   */
@@ -58,7 +59,8 @@ public:
   void Update(int index, NDArray weight, NDArray grad);
   // TODO(zhangcheng-qinyinghua)
   // implement Update a list of arrays, maybe in the form of map
-  //void Update(int index, std::vector<NDArray> weights, std::vector<NDArray> grad, mx_float lr);
+  // void Update(int index, std::vector<NDArray> weights, std::vector<NDArray>
+  // grad, mx_float lr);
 
   /*!
   *  \brief Serialize the optimizer parameters to a string.
@@ -68,7 +70,7 @@ public:
 
 private:
   bool init_;
-  float learning_rate_;
+  mx_float learning_rate_, weight_decay_;
   std::string opt_type_;
   Optimizer(const Optimizer &);
   Optimizer &operator=(const Optimizer &);
@@ -76,8 +78,7 @@ private:
   OptimizerCreator creator_;
   std::map<std::string, std::string> params_;
 };
-
 }
 }
 
-#endif // MXNETCPP_OPTIMIZER_H
+#endif  // MXNETCPP_OPTIMIZER_H

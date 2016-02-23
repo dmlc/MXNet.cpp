@@ -32,9 +32,11 @@ namespace private_ {
         params.emplace(line.substr(0, n), line.substr(n+1));
       }
       float lr = std::stof(params.at("learning_rate"));
-      std::unique_ptr<Optimizer> opt(new Optimizer(params.at("opt_type"), lr));
+      float wd = std::stof(params.at("weight_decay"));
+      std::unique_ptr<Optimizer> opt(new Optimizer(params.at("opt_type"), lr, wd));
       params.erase("opt_type");
       params.erase("learning_rate");
+      params.erase("weight_decay");
       for (const auto& pair : params) {
         opt->SetParam(pair.first, pair.second);
       }
