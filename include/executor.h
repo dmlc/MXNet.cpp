@@ -20,12 +20,12 @@ class Optimizer;
 * \brief Executor interface
 */
 class Executor {
- public:
+public:
   Executor(const Symbol &symbol, Context context,
-           const std::vector<NDArray> &arg_arrays,
-           const std::vector<NDArray> &grad_arrays,
-           const std::vector<OpReqType> &grad_reqs,
-           const std::vector<NDArray> &aux_arrays);
+    const std::vector<NDArray> &arg_arrays,
+    const std::vector<NDArray> &grad_arrays,
+    const std::vector<OpReqType> &grad_reqs,
+    const std::vector<NDArray> &aux_arrays);
   explicit Executor(const ExecutorHandle &h) { handle_ = h; }
   /*!
   * \brief Perform a Forward operation of Operator
@@ -43,22 +43,22 @@ class Executor {
   /*!
   * \brief Perform a Backward operation of the Operator.
   *  This must be called after Forward.
-  *  After this operation, NDArrays specified by grad_in_args_store will be
-  *updated accordingly.
+  *  After this operation, NDArrays specified by grad_in_args_store will be updated accordingly.
   *  User is allowed to pass in an empty Array if the head node is
   *  loss function and head gradeitn is not needed.
   *
   * \param head_grads the gradient of head nodes to be backproped.
   */
   void Backward(const std::vector<NDArray> &head_grads =
-                    std::vector<NDArray>()) {
+    std::vector<NDArray>()) {
     std::vector<NDArrayHandle> head_grads_;
     for (auto d : head_grads) {
       head_grads_.push_back(d.GetHandle());
     }
     if (head_grads_.size() > 0) {
       MXExecutorBackward(handle_, head_grads_.size(), head_grads_.data());
-    } else {
+    }
+    else {
       MXExecutorBackward(handle_, 0, nullptr);
     }
   }
@@ -66,14 +66,11 @@ class Executor {
   * \brief update the arguments with given learning rate and optimizer
   * \param opt the pointer to the optimizer
   * \param lr learning rate
-  * \param wd weight decay
-  * \param arg_update_begin begin index of the arguments to be updated, it
-  * starts after the input data by default
-  * \param arg_update_end end index of the arguments to be updated, it ends
-  * before the label data by default
+  * \param arg_update_begin begin index of the arguments to be updated, it starts after the input data by default
+  * \param arg_update_end end index of the arguments to be updated, it ends before the label data by default
   */
-  void UpdateAll(Optimizer *opt, float lr, float wd, int arg_update_begin = 1,
-                 int arg_update_end = -1);
+  void UpdateAll(Optimizer *opt, float lr, int arg_update_begin = 1,
+    int arg_update_end = -1);
   /*!
   * \brief destructor, free the handle
   */
@@ -86,11 +83,12 @@ class Executor {
   */
   std::vector<NDArray> outputs;
 
- private:
+private:
   Executor(const Executor &e);
   Executor &operator=(const Executor &e);
   ExecutorHandle handle_;
 };
+
 }
 }
-#endif  // MXNETCPP_EXECUTOR_H
+#endif // MXNETCPP_EXECUTOR_H

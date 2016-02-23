@@ -20,7 +20,7 @@ class Mxnet;
 * \brief Operator interface
 */
 class Operator {
- public:
+public:
   /*!
   * \brief Operator constructor
   * \param operator_name type of the operator
@@ -106,16 +106,16 @@ class Operator {
   */
   Symbol CreateSymbol(const std::string &name = "");
 
- private:
+private:
   std::map<std::string, std::string> params_desc_;
   bool variable_params_ = false;
   std::map<std::string, std::string> params_;
   std::vector<SymbolHandle> input_values;
   std::vector<std::string> input_keys;
   AtomicSymbolCreator handle_;
-  static OpMap *op_map_;
+  static OpMap* op_map_;
 };
 }
 }
 
-#endif  // MXNETCPP_OPERATOR_H
+#endif // MXNETCPP_OPERATOR_H

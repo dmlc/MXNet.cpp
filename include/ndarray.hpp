@@ -14,7 +14,7 @@
 
 namespace mxnet {
 namespace cpp {
-
+	
 NDArray::NDArray() {
   NDArrayHandle handle;
   CHECK_EQ(MXNDArrayCreateNone(&handle), 0);
@@ -31,11 +31,12 @@ NDArray::NDArray(const std::vector<mx_uint> &shape, const Context &context,
            0);
   blob_ptr_ = std::make_shared<NDBlob>(handle);
 }
-NDArray::NDArray(const Shape &shape, const Context &context, bool delay_alloc) {
+NDArray::NDArray(const Shape &shape, const Context &context,
+  bool delay_alloc) {
   NDArrayHandle handle;
   CHECK_EQ(MXNDArrayCreate(shape.data(), shape.ndim(), context.GetDeviceType(),
-                           context.GetDeviceId(), delay_alloc, &handle),
-           0);
+    context.GetDeviceId(), delay_alloc, &handle),
+    0);
   blob_ptr_ = std::make_shared<NDBlob>(handle);
 }
 NDArray::NDArray(const mx_float *data, size_t size) {
@@ -260,92 +261,26 @@ void NDArray::SampleUniform(mx_float begin, mx_float end, NDArray *out) {
   CHECK_EQ(MXFuncInvoke(func_handle, nullptr, scalar, &out->blob_ptr_->handle_),
            0);
 }
-void NDArray::Load(const std::string &file_name,
-                   std::vector<NDArray> *array_list,
-                   std::map<std::string, NDArray> *array_map) {
-  mx_uint out_size, out_name_size;
-  NDArrayHandle *out_arr;
-  const char **out_names;
-  CHECK_EQ(MXNDArrayLoad(file_name.c_str(), &out_size, &out_arr, &out_name_size,
-                         &out_names),
-           0);
-  if (array_list != nullptr) {
-    for (mx_uint i = 0; i < out_size; ++i) {
-      array_list->push_back(NDArray(out_arr[i]));
-    }
-  }
-  if (array_map != nullptr && out_name_size > 0) {
-    CHECK_EQ(out_name_size, out_size);
-    for (mx_uint i = 0; i < out_size; ++i) {
-      (*array_map)[out_names[i]] = NDArray(out_arr[i]);
-    }
-  }
-}
-std::map<std::string, NDArray> NDArray::LoadToMap(
-    const std::string &file_name) {
-  std::map<std::string, NDArray> array_map;
-  mx_uint out_size, out_name_size;
-  NDArrayHandle *out_arr;
-  const char **out_names;
-  CHECK_EQ(MXNDArrayLoad(file_name.c_str(), &out_size, &out_arr, &out_name_size,
-                         &out_names),
-           0);
-  if (out_name_size > 0) {
-    CHECK_EQ(out_name_size, out_size);
-    for (mx_uint i = 0; i < out_size; ++i) {
-      array_map[out_names[i]] = NDArray(out_arr[i]);
-    }
-  }
-  return array_map;
-}
-std::vector<NDArray> NDArray::LoadToList(const std::string &file_name) {
-  std::vector<NDArray> array_list;
-  mx_uint out_size, out_name_size;
-  NDArrayHandle *out_arr;
-  const char **out_names;
-  CHECK_EQ(MXNDArrayLoad(file_name.c_str(), &out_size, &out_arr, &out_name_size,
-                         &out_names),
-           0);
-  for (mx_uint i = 0; i < out_size; ++i) {
-    array_list.push_back(NDArray(out_arr[i]));
-  }
-  return array_list;
-}
-void NDArray::Save(const std::string &file_name,
-                   const std::map<std::string, NDArray> &array_map) {
-  std::vector<NDArrayHandle> args;
-  std::vector<const char *> keys;
-  for (const auto &t : array_map) {
-    args.push_back(t.second.GetHandle());
-    keys.push_back(t.first.c_str());
-  }
-  CHECK_EQ(
-      MXNDArraySave(file_name.c_str(), args.size(), args.data(), keys.data()),
-      0);
-}
-void NDArray::Save(const std::string &file_name,
-                   const std::vector<NDArray> &array_list) {
-  std::vector<NDArrayHandle> args;
-  std::vector<const char *> keys;
-  CHECK_EQ(MXNDArraySave(file_name.c_str(), args.size(), args.data(), nullptr),
-           0);
-}
 
-size_t NDArray::Offset(size_t h, size_t w) const {
+size_t NDArray::Offset(size_t h, size_t w) const
+{
   return (h * GetShape()[1]) + w;
 }
 
-size_t NDArray::Offset(size_t c, size_t h, size_t w) const {
+size_t NDArray::Offset(size_t c, size_t h, size_t w) const
+{
   auto const shape = GetShape();
   return h * shape[0] * shape[2] + w * shape[0] + c;
 }
 
-mx_float NDArray::At(size_t h, size_t w) const {
-  return GetData()[Offset(h, w)];
+mx_float NDArray::At(size_t h, size_t w) const
+{
+  return GetData()[Offset(h,w)];
 }
 
-mx_float NDArray::At(size_t c, size_t h, size_t w) const {
-  return GetData()[Offset(c, h, w)];
+mx_float NDArray::At(size_t c, size_t h, size_t w) const
+{
+  return GetData()[Offset(c,h,w)];
 }
 
 std::vector<mx_uint> NDArray::GetShape() const {
@@ -372,4 +307,5 @@ Context NDArray::GetContext() const {
 }  // namespace cpp
 }  // namespace mxnet
 
-#endif  // MXNETCPP_NDARRAY_HPP
+
+#endif // MXNETCPP_NDARRAY_HPP
