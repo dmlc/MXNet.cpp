@@ -18,7 +18,7 @@
 
 namespace mxnet {
 namespace cpp {
-OpMap *Symbol::op_map_ = new OpMap();
+OpMap* Symbol::op_map_ = new OpMap();
 Symbol::Symbol(SymbolHandle handle) {
   blob_ptr_ = std::make_shared<SymBlob>(handle);
 }
@@ -28,53 +28,6 @@ Symbol::Symbol(const std::string &name) {
   blob_ptr_ = std::make_shared<SymBlob>(handle);
 }
 Symbol Symbol::Variable(const std::string &name) { return Symbol(name); }
-Symbol Symbol::operator[](int index) {
-  SymbolHandle out;
-  MXSymbolGetOutput(GetHandle(), index, &out);
-  return Symbol(out);
-}
-Symbol Symbol::operator[](const std::string &index) {
-  auto outputs = ListOutputs();
-  for (mx_uint i = 0; i < outputs.size(); ++i) {
-    if (outputs[i] == index) {
-      return (*this)[i];
-    }
-  }
-  LOG_FATAL.stream() << "Cannot find output that matches name " << index;
-  return (*this)[0];
-}
-Symbol Symbol::Group(const std::vector<Symbol> &symbols) {
-  SymbolHandle out;
-  std::vector<SymbolHandle> handle_list;
-  for (const auto &t : symbols) {
-    handle_list.push_back(t.GetHandle());
-  }
-  MXSymbolCreateGroup(handle_list.size(), handle_list.data(), &out);
-  return Symbol(out);
-}
-Symbol Symbol::Load(const std::string &file_name) {
-  SymbolHandle handle;
-  CHECK_EQ(MXSymbolCreateFromFile(file_name.c_str(), &(handle)), 0);
-  return Symbol(handle);
-}
-Symbol Symbol::LoadJSON(const std::string &json_str) {
-  SymbolHandle handle;
-  CHECK_EQ(MXSymbolCreateFromJSON(json_str.c_str(), &(handle)), 0);
-  return Symbol(handle);
-}
-void Symbol::Save(const std::string &file_name) {
-  CHECK_EQ(MXSymbolSaveToFile(GetHandle(), file_name.c_str()), 0);
-}
-std::string Symbol::ToJSON() {
-  const char *out_json;
-  CHECK_EQ(MXSymbolSaveToJSON(GetHandle(), &out_json), 0);
-  return std::string(out_json);
-}
-Symbol Symbol::GetInternals() const {
-  SymbolHandle handle;
-  CHECK_EQ(MXSymbolGetInternals(GetHandle(), &handle), 0);
-  return Symbol(handle);
-}
 Symbol::Symbol(const std::string &operator_name, const std::string &name,
                std::vector<const char *> input_keys,
                std::vector<SymbolHandle> input_values,
@@ -192,8 +145,7 @@ void Symbol::InferExecutorArrays(
     std::vector<NDArray> *aux_arrays,
     const std::map<std::string, NDArray> &args_map,
     const std::map<std::string, NDArray> &arg_grad_store,
-    const std::map<std::string, OpReqType> &grad_req_type,
-    const std::map<std::string, NDArray> &aux_map) const {
+    const std::map<std::string, OpReqType> &grad_req_type) const {
 
   const auto arg_name_list = ListArguments();
   std::vector<std::vector<mx_uint> > in_shapes, aux_shapes, out_shapes;
@@ -232,19 +184,11 @@ void Symbol::InferExecutorArrays(
     }
   }
 
-  const auto aux_name_list = ListAuxiliaryStates();
-  for (size_t i = 0; i < aux_shapes.size(); ++i) {
-    const auto &shape = aux_shapes[i];
-    const auto &aux_name = aux_name_list[i];
-    auto iter_aux = aux_map.find(aux_name);
-    if (iter_aux != aux_map.end()) {
-      aux_arrays->push_back(iter_aux->second);
-    } else {
-      aux_arrays->push_back(NDArray(shape, context, false));
-      NDArray::SampleGaussian(0, 1, &aux_arrays->back());
-    }
+  for (const auto &shape : aux_shapes) {
+    aux_arrays->push_back(NDArray(shape, context, false));
   }
 }
+
 void Symbol::InferArgsMap(
     const Context &context, std::map<std::string, NDArray> *args_map,
     const std::map<std::string, NDArray> &known_args) const {
@@ -278,16 +222,14 @@ void Symbol::InferArgsMap(
 Executor *Symbol::SimpleBind(
     const Context &context, const std::map<std::string, NDArray> &args_map,
     const std::map<std::string, NDArray> &arg_grad_store,
-    const std::map<std::string, OpReqType> &grad_req_type,
-    const std::map<std::string, NDArray> &aux_map) {
+    const std::map<std::string, OpReqType> &grad_req_type) {
   std::vector<NDArray> arg_arrays;
   std::vector<NDArray> grad_arrays;
   std::vector<OpReqType> grad_reqs;
   std::vector<NDArray> aux_arrays;
 
   InferExecutorArrays(context, &arg_arrays, &grad_arrays, &grad_reqs,
-                      &aux_arrays, args_map, arg_grad_store, grad_req_type,
-                      aux_map);
+                      &aux_arrays, args_map, arg_grad_store, grad_req_type);
 
   return new Executor(*this, context, arg_arrays, grad_arrays, grad_reqs,
                       aux_arrays);
@@ -304,4 +246,4 @@ Executor *Symbol::Bind(const Context &context,
 }  // namespace cpp
 }  // namespace mxnet
 
-#endif  // MXNETCPP_SYMBOL_HPP
+#endif // MXNETCPP_SYMBOL_HPP
