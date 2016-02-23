@@ -1,9 +1,17 @@
+/*!
+*  Copyright (c) 2016 by Contributors
+* \file op.h
+* \brief definition of all the operators
+* \author Chuntao Hong
+*/
+
 #ifndef _MXNETOP_H
 #define _MXNETOP_H
 
 #include <string>
 #include <vector>
-#include "mxnet/base.h"
+#include "base.h"
+#include "shape.h"
 #include "MxNetCpp.h"
 
 namespace mxnet {
@@ -307,11 +315,11 @@ inline Symbol Convolution(const std::string& symbol_name,
                           Symbol data,
                           Symbol weight,
                           Symbol bias,
-                          mxnet::TShape kernel,
+                          Shape kernel,
                           int num_filter,
-                          mxnet::TShape stride = mshadow::Shape2(1, 1),
-                          mxnet::TShape dilate = mshadow::Shape2(1, 1),
-                          mxnet::TShape pad = mshadow::Shape2(0, 0),
+                          Shape stride = Shape(1,1),
+                          Shape dilate = Shape(1,1),
+                          Shape pad = Shape(0,0),
                           int num_group = 1,
                           int64_t workspace = 512,
                           bool no_bias = false) {
@@ -331,22 +339,22 @@ inline Symbol Convolution(const std::string& symbol_name,
 }
 
 /*!
- * \breif Crop the 2th and 3th dim of input data, with the corresponding size
- *        of w_h orwith widht and height of the second input symbol
+ * \breif Crop the 2nd and 3rd dim of input data, with the corresponding size
+ *        of w_h or with width and height of the second input symbol
  * \param symbol_name name of the resulting symbol.
  * \param num_args Number of inputs for crop, if equals one, then we will use
  *        the h_wfor crop heihgt and width, else if equals two, then we will
  *        use the heightand width of the second input symbol, we name crop_like here
- * \param offset corp offset coordinate: (y, x).
- * \param h_w corp height and weight: (h, w).
+ * \param offset crop offset coordinate: (y, x).
+ * \param h_w crop height and weight: (h, w).
  * \param center_crop If set to true, then it will use be the center_crop,or it
  *        will crop using the shape of crop_like
  * \return new symbol
  */
 inline Symbol Crop(const std::string& symbol_name,
                    int num_args,
-                   mxnet::TShape offset = mshadow::Shape2(0, 0),
-                   mxnet::TShape h_w = mshadow::Shape2(0, 0),
+                   Shape offset = Shape(0,0),
+                   Shape h_w = Shape(0,0),
                    bool center_crop = false) {
   return Operator("Crop")
            .SetParam("num_args", num_args)
@@ -375,10 +383,10 @@ inline Symbol Deconvolution(const std::string& symbol_name,
                             Symbol data,
                             Symbol weight,
                             Symbol bias,
-                            mxnet::TShape kernel,
+                            Shape kernel,
                             int num_filter,
-                            mxnet::TShape stride = mshadow::Shape2(1, 1),
-                            mxnet::TShape pad = mshadow::Shape2(0, 0),
+                            Shape stride = Shape(1,1),
+                            Shape pad = Shape(0,0),
                             int num_group = 1,
                             int64_t workspace = 512,
                             bool no_bias = true) {
@@ -415,7 +423,7 @@ inline Symbol Dropout(const std::string& symbol_name,
 /*!
  * \breif Perform an elementwise sum over all the inputs. 
  * \param symbol_name name of the resulting symbol.
- * \param num_args Number of inputs to be sumed. 
+ * \param num_args Number of inputs to be summed. 
  * \return new symbol
  */
 inline Symbol ElementWiseSum(const std::string& symbol_name,
@@ -583,10 +591,10 @@ enum class PoolingPoolType {
  */
 inline Symbol Pooling(const std::string& symbol_name,
                       Symbol data,
-                      mxnet::TShape kernel,
+                      Shape kernel,
                       PoolingPoolType pool_type,
-                      mxnet::TShape stride = mshadow::Shape2(1, 1),
-                      mxnet::TShape pad = mshadow::Shape2(0, 0)) {
+                      Shape stride = Shape(1,1),
+                      Shape pad = Shape(0,0)) {
   static const char *PoolingPoolTypeValues[] = {
     "avg",
     "max",
@@ -666,13 +674,13 @@ inline Symbol LogisticRegressionOutput(const std::string& symbol_name,
  * \param symbol_name name of the resulting symbol.
  * \param data Input data to  reshape. 
  * \param target_shape Target new shape.
- *        One and only one dim can be 0, in which case it will be infered from
+ *        One and only one dim can be 0, in which case it will be inferred from
  *        the rest of dims
  * \return new symbol
  */
 inline Symbol Reshape(const std::string& symbol_name,
                       Symbol data,
-                      mxnet::TShape target_shape) {
+                      Shape target_shape) {
   return Operator("Reshape")
            .SetParam("target_shape", target_shape)
            .SetInput("data", data)
@@ -755,11 +763,11 @@ inline Symbol SoftmaxActivation(const std::string& symbol_name,
  * \param label Label data. 
  * \param grad_scale Scale the gradient by a float factor.
  * \param ignore_label the ignore_label will not work in backward, and this
- *        onlybe used when multi_output=true
- * \param multi_output If set to true, for a (n,k,x_1,..,x_n) dimensionalinput
- *        tensor, softmax will generate n*x_1*...*x_n output, eachhas k classes
- * \param use_ignore If set to true, the ignore_label value will not
- *        contributorto the backward gradient
+ *        only be used when multi_output=true
+ * \param multi_output If set to true, for a (n,k,x_1,..,x_n) dimensional input
+ *        tensor, softmax will generate n*x_1*...*x_n output, each has k classes
+ * \param use_ignore If set to true, the ignore_label value will not contribute
+ *        to the backward gradient
  * \return new symbol
  */
 inline Symbol SoftmaxOutput(const std::string& symbol_name,
@@ -786,11 +794,11 @@ inline Symbol SoftmaxOutput(const std::string& symbol_name,
  * \param data Input data to softmax. 
  * \param grad_scale Scale the gradient by a float factor.
  * \param ignore_label the ignore_label will not work in backward, and this
- *        onlybe used when multi_output=true
- * \param multi_output If set to true, for a (n,k,x_1,..,x_n) dimensionalinput
- *        tensor, softmax will generate n*x_1*...*x_n output, eachhas k classes
- * \param use_ignore If set to true, the ignore_label value will not
- *        contributorto the backward gradient
+ *        only be used when multi_output=true
+ * \param multi_output If set to true, for a (n,k,x_1,..,x_n) dimensional input
+ *        tensor, softmax will generate n*x_1*...*x_n output, each has k classes
+ * \param use_ignore If set to true, the ignore_label value will not contribute
+ *        to the backward gradient
  * \return new symbol
  */
 inline Symbol Softmax(const std::string& symbol_name,

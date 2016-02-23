@@ -5,7 +5,8 @@
  * \author Xin Li
  */
 
-#include "MxNetCpp.h"
+#include "kvstore.h"
+#include "optimizer.h"
 #include <numeric>
 
 #ifndef KVSTORE_HPP

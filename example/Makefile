@@ -1,15 +1,24 @@
 CXX=g++
-BLAS=-lopenblas -DMSHADOW_USE_CBLAS=1 -DMSHADOW_USE_MKL=0 
+BLAS=-L /opt/openblas/lib -lopenblas -DMSHADOW_USE_CBLAS=1 -DMSHADOW_USE_MKL=0 
 CUDA=-DMSHADOW_USE_CUDA=1
 
-CFLAGS=-I ../include -Wall -O3 -msse3 -funroll-loops -Wno-unused-parameter -Wno-unknown-pragmas -fopenmp 
-LDFLAGS=-L ../lib -lmxnet $(BLAS) $(CUDA)
+#COMMFLAGS=-static -static-libgcc -static-libstdc++
+
+CFLAGS=$(COMMFLAGS) -I ../include -Wall -O3 -msse3 -funroll-loops -Wno-unused-parameter -Wno-unknown-pragmas -fopenmp 
+LDFLAGS=$(COMMFLAGS) -L ../lib/linux -lmxnet $(BLAS) $(CUDA) -lgomp -pthread
+
+all: mlp lenet
 
 lenet: ./lenet.cpp
-	$(CXX) -std=c++0x $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CXX) -c -std=c++0x $(CFLAGS) $^
+	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
+	-rm -f $(basename $@).o
 
 mlp: ./mlp.cpp
-	$(CXX) -std=c++0x $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CXX) -c -std=c++0x $(CFLAGS) $^ 
+	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
+	-rm -f $(basename $@).o
 
-use_ndarray: ./use_ndarray.cpp
-	$(CXX) -std=c++0x $(CFLAGS) $(LDFLAGS) -o $@ $^
+clean:
+	-rm -f mlp
+	-rm -f lenet

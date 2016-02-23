@@ -2,14 +2,15 @@
  *  Copyright (c) 2016 by Contributors
  * \file executor.hpp
  * \brief implementation of the executor
- * \author Zhang Chen
+ * \author Zhang Chen, Chuntao Hong
  */
 
-#ifndef EXECUTOR_HPP_UREQ2OJW
-#define EXECUTOR_HPP_UREQ2OJW
+#ifndef MXNETCPP_EXECUTOR_HPP
+#define MXNETCPP_EXECUTOR_HPP
 
 #include <vector>
-#include "MxNetCpp.h"
+#include "executor.h"
+#include "optimizer.h"
 
 namespace mxnet {
 namespace cpp {
@@ -64,5 +65,4 @@ void Executor::UpdateAll(Optimizer *opt, float lr, int arg_update_begin,
 }  // namespace cpp
 }  // namespace mxnet
 
-
-#endif /* end of include guard: EXECUTOR_HPP_UREQ2OJW */
+#endif // MXNETCPP_EXECUTOR_HPP

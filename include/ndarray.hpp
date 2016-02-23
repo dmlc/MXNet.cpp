@@ -2,17 +2,19 @@
  *  Copyright (c) 2016 by Contributors
  * \file ndarray.hpp
  * \brief implementation of the ndarray
- * \author Zhang Chen
+ * \author Zhang Chen, Chuntao Hong
  */
 
-#ifndef NDARRAY_HPP_QJLSKOCA
-#define NDARRAY_HPP_QJLSKOCA
+#ifndef MXNETCPP_NDARRAY_HPP
+#define MXNETCPP_NDARRAY_HPP
 
 #include <vector>
-#include "MxNetCpp.h"
+#include "logging.h"
+#include "ndarray.h"
 
 namespace mxnet {
 namespace cpp {
+	
 NDArray::NDArray() {
   NDArrayHandle handle;
   CHECK_EQ(MXNDArrayCreateNone(&handle), 0);
@@ -29,12 +31,12 @@ NDArray::NDArray(const std::vector<mx_uint> &shape, const Context &context,
            0);
   blob_ptr_ = std::make_shared<NDBlob>(handle);
 }
-NDArray::NDArray(mshadow::TShape shape, const Context &context,
-                 bool delay_alloc) {
+NDArray::NDArray(const Shape &shape, const Context &context,
+  bool delay_alloc) {
   NDArrayHandle handle;
   CHECK_EQ(MXNDArrayCreate(shape.data(), shape.ndim(), context.GetDeviceType(),
-                           context.GetDeviceId(), delay_alloc, &handle),
-           0);
+    context.GetDeviceId(), delay_alloc, &handle),
+    0);
   blob_ptr_ = std::make_shared<NDBlob>(handle);
 }
 NDArray::NDArray(const mx_float *data, size_t size) {
@@ -50,7 +52,7 @@ NDArray::NDArray(const std::vector<mx_float> &data) {
   blob_ptr_ = std::make_shared<NDBlob>(handle);
 }
 
-NDArray NDArray::operator+(real_t scalar) {
+NDArray NDArray::operator+(mx_float scalar) {
   NDArray ret;
   FunctionHandle func_handle;
   MXGetFunction("_plus_scalar", &func_handle);
@@ -59,7 +61,7 @@ NDArray NDArray::operator+(real_t scalar) {
            0);
   return ret;
 }
-NDArray NDArray::operator-(real_t scalar) {
+NDArray NDArray::operator-(mx_float scalar) {
   NDArray ret;
   FunctionHandle func_handle;
   MXGetFunction("_minus_scalar", &func_handle);
@@ -68,7 +70,7 @@ NDArray NDArray::operator-(real_t scalar) {
            0);
   return ret;
 }
-NDArray NDArray::operator*(real_t scalar) {
+NDArray NDArray::operator*(mx_float scalar) {
   NDArray ret;
   FunctionHandle func_handle;
   MXGetFunction("_mul_scalar", &func_handle);
@@ -77,7 +79,7 @@ NDArray NDArray::operator*(real_t scalar) {
            0);
   return ret;
 }
-NDArray NDArray::operator/(real_t scalar) {
+NDArray NDArray::operator/(mx_float scalar) {
   NDArray ret;
   FunctionHandle func_handle;
   MXGetFunction("_div_scalar", &func_handle);
@@ -134,13 +136,13 @@ NDArray NDArray::operator/(const NDArray &rhs) {
       0);
   return ret;
 }
-NDArray &NDArray::operator=(real_t scalar) {
+NDArray &NDArray::operator=(mx_float scalar) {
   FunctionHandle func_handle;
   MXGetFunction("_set_value", &func_handle);
   CHECK_EQ(MXFuncInvoke(func_handle, nullptr, &scalar, &blob_ptr_->handle_), 0);
   return *this;
 }
-NDArray &NDArray::operator+=(real_t scalar) {
+NDArray &NDArray::operator+=(mx_float scalar) {
   FunctionHandle func_handle;
   MXGetFunction("_plus_scalar", &func_handle);
   CHECK_EQ(MXFuncInvoke(func_handle, &blob_ptr_->handle_, &scalar,
@@ -148,7 +150,7 @@ NDArray &NDArray::operator+=(real_t scalar) {
            0);
   return *this;
 }
-NDArray &NDArray::operator-=(real_t scalar) {
+NDArray &NDArray::operator-=(mx_float scalar) {
   FunctionHandle func_handle;
   MXGetFunction("_minus_scalar", &func_handle);
   CHECK_EQ(MXFuncInvoke(func_handle, &blob_ptr_->handle_, &scalar,
@@ -156,7 +158,7 @@ NDArray &NDArray::operator-=(real_t scalar) {
            0);
   return *this;
 }
-NDArray &NDArray::operator*=(real_t scalar) {
+NDArray &NDArray::operator*=(mx_float scalar) {
   FunctionHandle func_handle;
   MXGetFunction("_mul_scalar", &func_handle);
   CHECK_EQ(MXFuncInvoke(func_handle, &blob_ptr_->handle_, &scalar,
@@ -164,7 +166,7 @@ NDArray &NDArray::operator*=(real_t scalar) {
            0);
   return *this;
 }
-NDArray &NDArray::operator/=(real_t scalar) {
+NDArray &NDArray::operator/=(mx_float scalar) {
   FunctionHandle func_handle;
   MXGetFunction("_div_scalar", &func_handle);
   CHECK_EQ(MXFuncInvoke(func_handle, &blob_ptr_->handle_, &scalar,
@@ -245,19 +247,40 @@ void NDArray::WaitToWrite() {
   CHECK_EQ(MXNDArrayWaitToWrite(blob_ptr_->handle_), 0);
 }
 void NDArray::WaitAll() { CHECK_EQ(MXNDArrayWaitAll(), 0); }
-void NDArray::SampleGaussian(real_t mu, real_t sigma, NDArray *out) {
+void NDArray::SampleGaussian(mx_float mu, mx_float sigma, NDArray *out) {
   FunctionHandle func_handle;
   MXGetFunction("_random_gaussian", &func_handle);
-  real_t scalar[2] = {mu, sigma};
+  mx_float scalar[2] = {mu, sigma};
   CHECK_EQ(MXFuncInvoke(func_handle, nullptr, scalar, &out->blob_ptr_->handle_),
            0);
 }
-void NDArray::SampleUniform(real_t begin, real_t end, NDArray *out) {
+void NDArray::SampleUniform(mx_float begin, mx_float end, NDArray *out) {
   FunctionHandle func_handle;
   MXGetFunction("_random_uniform", &func_handle);
-  real_t scalar[2] = {begin, end};
+  mx_float scalar[2] = {begin, end};
   CHECK_EQ(MXFuncInvoke(func_handle, nullptr, scalar, &out->blob_ptr_->handle_),
            0);
+}
+
+size_t NDArray::Offset(size_t h, size_t w) const
+{
+  return (h * GetShape()[1]) + w;
+}
+
+size_t NDArray::Offset(size_t c, size_t h, size_t w) const
+{
+  auto const shape = GetShape();
+  return h * shape[0] * shape[2] + w * shape[0] + c;
+}
+
+mx_float NDArray::At(size_t h, size_t w) const
+{
+  return GetData()[Offset(h,w)];
+}
+
+mx_float NDArray::At(size_t c, size_t h, size_t w) const
+{
+  return GetData()[Offset(c,h,w)];
 }
 
 std::vector<mx_uint> NDArray::GetShape() const {
@@ -268,11 +291,6 @@ std::vector<mx_uint> NDArray::GetShape() const {
   for (mx_uint i = 0; i < out_dim; ++i) {
     ret.push_back(out_pdata[i]);
   }
-  return ret;
-}
-mx_float *NDArray::GetData() {
-  mx_float *ret;
-  MXNDArrayGetData(blob_ptr_->handle_, &ret);
   return ret;
 }
 const mx_float *NDArray::GetData() const {
@@ -290,4 +308,4 @@ Context NDArray::GetContext() const {
 }  // namespace mxnet
 
 
-#endif /* end of include guard: NDARRAY_HPP_QJLSKOCA */
+#endif // MXNETCPP_NDARRAY_HPP

@@ -41,15 +41,15 @@ public:
     auto fc3 = FullyConnected("fc3", act2, w3, b3, 1);
     auto mlp = LogisticRegressionOutput("softmax", fc3, sym_label);
 
-    NDArray w1m(vector<mx_uint>({ 2048, 600 }), ctx_cpu), 
-      w2m(vector<mx_uint>({ 512, 2048 }), ctx_cpu), 
-      w3m(vector<mx_uint>({ 1, 512 }), ctx_cpu);
+    NDArray w1m(Shape(2048, 600), ctx_cpu), 
+      w2m(Shape(512, 2048), ctx_cpu), 
+      w3m(Shape(1, 512), ctx_cpu);
     NDArray::SampleGaussian(0, 1, &w1m);
     NDArray::SampleGaussian(0, 1, &w2m);
     NDArray::SampleGaussian(0, 1, &w3m);
-    NDArray b1m(mshadow::Shape1(2048), ctx_cpu),
-      b2m(mshadow::Shape1(512), ctx_cpu),
-      b3m(mshadow::Shape1(1), ctx_cpu);
+    NDArray b1m(Shape(2048), ctx_cpu),
+      b2m(Shape(512), ctx_cpu),
+      b3m(Shape(1), ctx_cpu);
     NDArray::SampleGaussian(0, 1, &b1m);
     NDArray::SampleGaussian(0, 1, &b2m);
     NDArray::SampleGaussian(0, 1, &b3m);
@@ -57,6 +57,9 @@ public:
     for (auto s : mlp.ListArguments()) {
       LG << s;
     }  
+
+    double samplesProcessed = 0;
+    double sTime = get_time();
 
     /*setup basic configs*/
     KVStore kv("dist_sync");
@@ -83,6 +86,7 @@ public:
         // read data in
         auto r = dataReader.ReadBatch();
         size_t nSamples = r.size() / (sampleSize * kv.GetNumWorkers());
+        samplesProcessed += nSamples;
         CHECK(!r.empty());
         vector<float> data_vec, label_vec;
         int start = workerIndex * nSamples;
@@ -97,10 +101,10 @@ public:
 
         const float *dptr = data_vec.data();
         const float *lptr = label_vec.data();
-        NDArray dataArray = NDArray(mshadow::Shape2(nSamples, sampleSize - 1), 
+        NDArray dataArray = NDArray(Shape(nSamples, sampleSize - 1),
           ctx_cpu, false);
         NDArray labelArray =
-          NDArray(mshadow::Shape1(nSamples), ctx_cpu, false); 
+          NDArray(Shape(nSamples), ctx_cpu, false);
         dataArray.SyncCopyFromCPU(dptr, nSamples * (sampleSize - 1));
         labelArray.SyncCopyFromCPU(lptr, nSamples);
         args_map["data"] = dataArray;
@@ -122,7 +126,8 @@ public:
         exe->Forward(true);
         NDArray::WaitAll();
         LG << "Iter " << ITER
-          << ", accuracy: " << Auc(exe->outputs[0], labelArray);
+          << ", accuracy: " << Auc(exe->outputs[0], labelArray)
+          << "\t sample/s: " << samplesProcessed / (get_time() - sTime);
         exe->Backward();
         kv.Push(indices, exe->grad_arrays);
         kv.Pull(indices, exe->arg_arrays);
@@ -140,7 +145,7 @@ private:
   Context ctx_cpu;
   Context ctx_dev;
   map<string, NDArray> args_map;
-  const static int batchSize = 3000;
+  const static int batchSize = 300;
   const static int sampleSize = 601;
   const static int maxEpoch = 5;
   const int workerIndex;
@@ -160,8 +165,8 @@ private:
     const auto &out = exe->outputs;
     NDArray result = out[0].Copy(ctx_cpu);
     result.WaitToRead();
-    mxnet::real_t *pResult = result.GetData();
-    const mxnet::real_t *pLabel = labels.GetData();
+    const mx_float *pResult = result.GetData();
+    const mx_float *pLabel = labels.GetData();
     for (int i = 0; i < nSamples; ++i) {
       float label = pLabel[i];
       int cat_num = result.GetShape()[1];
@@ -182,8 +187,8 @@ private:
   
   float Auc(const NDArray& result, const NDArray& labels) {
     result.WaitToRead();
-    const mxnet::real_t *pResult = result.GetData();
-    const mxnet::real_t *pLabel = labels.GetData();
+    const mx_float *pResult = result.GetData();
+    const mx_float *pLabel = labels.GetData();
     int nSamples = labels.GetShape()[0];
     size_t nCorrect = 0;
     for (int i = 0; i < nSamples; ++i) {
