@@ -15,7 +15,7 @@
 
 namespace mxnet {
 namespace cpp {
-OpMap* Operator::op_map_ = new OpMap();
+OpMap *Operator::op_map_ = new OpMap();
 
 Operator::Operator(const std::string &operator_name) {
   handle_ = op_map_->GetSymbolCreator(operator_name);
@@ -37,12 +37,12 @@ Symbol Operator::CreateSymbol(const std::string &name) {
     input_keys.push_back(data.c_str());
   }
   const char **input_keys_p =
-    (input_keys.size() > 0) ? input_keys.data() : nullptr;
+      (input_keys.size() > 0) ? input_keys.data() : nullptr;
 
   MXSymbolCreateAtomicSymbol(handle_, param_keys.size(), param_keys.data(),
-    param_values.data(), &symbol_handle);
+                             param_values.data(), &symbol_handle);
   MXSymbolCompose(symbol_handle, pname, input_values.size(), input_keys_p,
-    input_values.data());
+                  input_values.data());
   return Symbol(symbol_handle);
 }
 Operator &Operator::SetInput(const std::string &name, Symbol symbol) {
@@ -50,8 +50,7 @@ Operator &Operator::SetInput(const std::string &name, Symbol symbol) {
   input_values.push_back(symbol.GetHandle());
   return *this;
 }
-
 }
 }
 
-#endif // MXNETCPP_OPERATOR_HPP
+#endif  // MXNETCPP_OPERATOR_HPP
