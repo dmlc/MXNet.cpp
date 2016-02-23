@@ -67,6 +67,7 @@ class Lenet {
     int batch_size = 42;
     int max_epoch = 100000;
     float learning_rate = 1e-4;
+    float weight_decay = 1e-4;
 
     /*prepare the data*/
     vector<float> data_vec, label_vec;
@@ -136,7 +137,7 @@ class Lenet {
         Executor *exe = lenet.SimpleBind(ctx_dev, args_map);
         exe->Forward(true);
         exe->Backward();
-        exe->UpdateAll(&opt, learning_rate);
+        exe->UpdateAll(&opt, learning_rate, weight_decay);
 
         delete exe;
       }
