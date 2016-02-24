@@ -1,36 +1,32 @@
-udo: false
+sudo: false
 
 language: cpp
 
 os:
+  - windows
   - linux
   - osx
 
 env:
   # code analysis
   - TASK=lint
-  # build mxnet.so with CUDA
-  - TASK=build
-  # run tests/cpp
-  - TASK=cpp_test
+  # TODO: build example
+  #- TASK=build
 
 # dependent apt packages
-addons:
-  apt:
-    packages:
-      - doxygen
-      - wget
-      - git
-      - libcurl4-openssl-dev
-      - unzip
-      - libatlas-dev
-      - libopencv-dev
-      - gcc-4.8
-      - g++-4.8
+#addons:
+#  apt:
+#    packages:
+#      - wget
+#      - git
+#      - libcurl4-openssl-dev
+#      - unzip
+#      - libatlas-dev
+#      - libopencv-dev
+#      - gcc-4.8
+#      - g++-4.8
 
 before_install:
-  - export NVCC_PREFIX=${HOME}
-#  - source dmlc-core/scripts/travis/travis_setup_env.sh
 
 install:
   - source tests/travis/setup.sh
@@ -41,9 +37,6 @@ script:
 cache:
   directories:
     - ${HOME}/.cache/usr
-
-#before_cache:
-#  - dmlc-core/scripts/travis/travis_before_cache.sh
 
 notifications:
 # Emails are sent to the committer's git-configured email address by default,
