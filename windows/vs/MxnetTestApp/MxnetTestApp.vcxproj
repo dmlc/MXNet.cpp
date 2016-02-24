@@ -23,6 +23,7 @@
     <ClInclude Include="..\..\..\include\c_api.h" />
     <ClInclude Include="..\..\..\include\executor.h" />
     <ClInclude Include="..\..\..\include\executor.hpp" />
+    <ClInclude Include="..\..\..\include\kvstore.hpp" />
     <ClInclude Include="..\..\..\include\kvstore.h" />
     <ClInclude Include="..\..\..\include\logging.h" />
     <ClInclude Include="..\..\..\include\MxNetCpp.h" />

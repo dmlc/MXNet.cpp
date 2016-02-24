@@ -13,12 +13,12 @@
 namespace mxnet {
 namespace cpp {
 
-Optimizer::Optimizer(const std::string &opt_type) {
+Optimizer::Optimizer(const std::string &opt_type, mx_float learning_rate, mx_float weight_decay)
+  :init_(false), learning_rate_(learning_rate), weight_decay_(weight_decay), opt_type_(opt_type) {
   MXOptimizerFindCreator(opt_type.c_str(), &creator_);
-  init_ = false;
 }
-void Optimizer::Update(int index, NDArray weight, NDArray grad, mx_float lr,
-                       mx_float wd) {
+
+void Optimizer::Update(int index, NDArray weight, NDArray grad) {
   if (!init_) {
     std::vector<const char *> param_keys;
     std::vector<const char *> param_values;
@@ -30,8 +30,19 @@ void Optimizer::Update(int index, NDArray weight, NDArray grad, mx_float lr,
                                param_values.data(), &handle_);
     init_ = true;
   }
-  MXOptimizerUpdate(handle_, index, weight.GetHandle(), grad.GetHandle(), lr,
-                    wd);
+  MXOptimizerUpdate(handle_, index, weight.GetHandle(), grad.GetHandle(), learning_rate_, weight_decay_);
+}
+
+std::string Optimizer::Serialize() const {
+  using ValueType = std::map<std::string, std::string>::value_type;
+  auto params = params_;
+  params.emplace("opt_type", opt_type_);
+  params.emplace("learning_rate", std::to_string(learning_rate_));
+  params.emplace("weight_decay", std::to_string(weight_decay_));
+  return std::accumulate(params.cbegin(), params.cend(), std::string(""),
+    [](const std::string& sum, const ValueType& i) {
+      return sum + '\n' + i.first + '=' + i.second;
+    }).substr(1);
 }
 }
 }

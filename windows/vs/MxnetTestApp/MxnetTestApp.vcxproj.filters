@@ -33,7 +33,7 @@
     <ClInclude Include="..\..\..\include\symbol.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\kvstore.h">
+    <ClInclude Include="..\..\..\include\kvstore.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\op.h">

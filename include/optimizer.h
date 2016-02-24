@@ -25,8 +25,9 @@ class Optimizer {
   * \brief Operator constructor, the optimizer is not initialized until the
   * first Update
   * \param opt_type type of the optimizer
+  * \param learning_rate
   */
-  explicit Optimizer(const std::string &opt_type);
+  Optimizer(const std::string &opt_type, mx_float learning_rate, mx_float weight_decay);
   /*!
   * \brief destructor, free the handle
   */
@@ -54,18 +55,23 @@ class Optimizer {
   *  \param index the unique index for the weight.
   *  \param weight the weight to update.
   *  \param grad gradient for the weight.
-  *  \param lr learning rate for this update.
-  *  \param wd weight decay for this update.
   */
-  void Update(int index, NDArray weight, NDArray grad, mx_float lr,
-              mx_float wd);
+  void Update(int index, NDArray weight, NDArray grad);
   // TODO(zhangcheng-qinyinghua)
   // implement Update a list of arrays, maybe in the form of map
   // void Update(int index, std::vector<NDArray> weights, std::vector<NDArray>
   // grad, mx_float lr);
 
- private:
+  /*!
+  *  \brief Serialize the optimizer parameters to a string.
+  *  \return serialization
+  */
+  std::string Serialize() const;
+
+private:
   bool init_;
+  mx_float learning_rate_, weight_decay_;
+  std::string opt_type_;
   Optimizer(const Optimizer &);
   Optimizer &operator=(const Optimizer &);
   OptimizerHandle handle_;

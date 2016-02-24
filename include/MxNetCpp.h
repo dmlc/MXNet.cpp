@@ -14,6 +14,7 @@
 #include "ndarray.hpp"
 #include "operator.hpp"
 #include "optimizer.hpp"
+#include "kvstore.hpp"
 #include "op.h"
 
 #endif  // MXNETCPP_H_

@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <numeric>
 
 #include "MxNetCpp.h"
 #include "util.h"
@@ -18,10 +19,11 @@ using namespace mxnet::cpp;
 
 class Mlp {
 public:
-  Mlp()
+  Mlp(int workerIndex)
     : ctx_cpu(Context(DeviceType::kCPU, 0)),
-    ctx_dev(Context(DeviceType::kCPU, 0)) {}
-  void Run() {
+    ctx_dev(Context(DeviceType::kCPU, 0)),
+    workerIndex(workerIndex) {}
+  void Run(const std::string& filePath) {
     /*define the symbolic net*/
     auto sym_x = Symbol::Variable("data");
     auto sym_label = Symbol::Variable("label");
@@ -60,25 +62,35 @@ public:
     double sTime = get_time();
 
     /*setup basic configs*/
-    Optimizer opt("ccsgd");
-    opt.SetParam("momentum", 0.9)
-      .SetParam("wd", 0.00001)
-      .SetParam("rescale_grad", 1.0 / (numWorkers * batchSize));
+    KVStore kv("dist_sync");
+    if (kv.GetRole() != "worker") {
+      kv.RunServer();
+      return;
+    }
+
+    std::unique_ptr<Optimizer> opt(new Optimizer("ccsgd", learning_rate, weight_decay));
+    (*opt).SetParam("momentum", 0.9)
+      .SetParam("rescale_grad", 1.0 / (kv.GetNumWorkers() * batchSize));
       //.SetParam("clip_gradient", 10);
+    kv.SetOptimizer(std::move(opt));
+
     const int nMiniBatches = 1;
+    bool init_kv = false;
     for (int ITER = 0; ITER < maxEpoch; ++ITER) {
-      DataReader dataReader("f:/chhong/data/adsdnn/v.bin", sampleSize, batchSize);
+      DataReader dataReader(filePath, sampleSize, batchSize);
       NDArray testData, testLabel;
       int mb = 0;
       while (!dataReader.Eof()) {
         //if (mb++ >= nMiniBatches) break;
         // read data in
         auto r = dataReader.ReadBatch();
-        size_t nSamples = r.size() / sampleSize;
+        size_t nSamples = r.size() / (sampleSize * kv.GetNumWorkers());
         samplesProcessed += nSamples;
-        CHECK(!r.empty());     
+        CHECK(!r.empty());
         vector<float> data_vec, label_vec;
-        for (int i = 0; i < nSamples; i++) {
+        int start = workerIndex * nSamples;
+        int end = (workerIndex+1) * nSamples;
+        for (int i = start; i < end; i++) {
           float * rp = r.data() + sampleSize * i;
           label_vec.push_back(*rp);
           data_vec.insert(data_vec.end(), rp + 1, rp + sampleSize);
@@ -103,13 +115,22 @@ public:
         args_map["w3"] = w3m;
         args_map["b3"] = b3m;
         Executor *exe = mlp.SimpleBind(ctx_dev, args_map);
+        std::vector<int> indices(exe->arg_arrays.size());
+        std::iota(indices.begin(), indices.end(), 0);
+        if (!init_kv) {
+          // First time, init kvstore
+          kv.Init(indices, exe->arg_arrays);
+          init_kv = true;
+        }
         exe->Forward(true);
         NDArray::WaitAll();
         LG << "Iter " << ITER
           << ", accuracy: " << Auc(exe->outputs[0], labelArray)
           << "\t sample/s: " << samplesProcessed / (get_time() - sTime);
         exe->Backward();
-        exe->UpdateAll(&opt, learning_rate);     
+        kv.Push(indices, exe->grad_arrays);
+        kv.Pull(indices, exe->arg_arrays);
+        //exe->UpdateAll(&opt, learning_rate);
         NDArray::WaitAll();
         delete exe;
       }
@@ -125,9 +146,10 @@ private:
   map<string, NDArray> args_map;
   const static int batchSize = 300;
   const static int sampleSize = 601;
-  const static int numWorkers = 1;
-  const static int maxEpoch = 100000;
+  const static int maxEpoch = 5;
+  const int workerIndex;
   float learning_rate = 0.01;
+  float weight_decay = 1e-5;
 
   float ValAccuracy(Symbol mlp, 
     const NDArray& samples, 
@@ -180,7 +202,13 @@ private:
 };
 
 int main(int argc, char const *argv[]) {
-  Mlp mlp;
-  mlp.Run();
+  CHECK_GE(argc, 2);
+  CHECK_LE(argc, 3);
+  int index = 0;
+  if (argc == 3) {
+    index = std::stoi(argv[2]);
+  }
+  Mlp mlp(index);
+  mlp.Run(argv[1]);
   return 0;
 }

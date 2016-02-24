@@ -16,17 +16,25 @@ namespace cpp {
 
 class KVStore {
 public:
-  inline KVStore(bool IsLocal = true) {
-  }
-
-  inline void Push(int key, const NDArray& val);
-  inline void Pull(int key, NDArray& val);
-  inline void SetOptimizer();
-  inline std::string GetType();
-  inline int GetNumWorkers();
+  inline KVStore(const std::string& name = "local");
+  inline void RunServer();
+  inline void Init(int key, const NDArray& val);
+  inline void Init(const std::vector<int>& keys, const std::vector<NDArray>& vals);
+  inline void Push(int key, const NDArray& val, int priority = 0);
+  inline void Push(const std::vector<int>& keys, const std::vector<NDArray>& vals, int priority = 0);
+  inline void Pull(int key, NDArray& out, int priority = 0);
+  inline void Pull(const std::vector<int>& keys, std::vector<NDArray>& outs, int priority = 0);
+  // TODO: put lr in optimizer or not?
+  inline void SetOptimizer(std::unique_ptr<Optimizer> optimizer);
+  inline std::string GetType() const;
+  inline int GetRank() const;
+  inline int GetNumWorkers() const;
+  inline std::string GetRole() const;
+  ~KVStore() { MXKVStoreFree(handle_); }
 
 private:
-  const char* TYPE_STRINGS[] = {"dist", "local"};
+  KVStoreHandle handle_;
+  std::unique_ptr<Optimizer> optimizer_;
 };
 
 }
