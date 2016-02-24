@@ -8,3 +8,4 @@ lint:
 	python scripts/lint.py dmlc ${LINT_LANG} include
 
 example:
+	make -C example travis
