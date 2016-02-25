@@ -20,7 +20,7 @@ namespace cpp {
 *   of arbirary dimension
 */
 struct Shape {
-public:
+ public:
   /*! \brief constructor */
   Shape()
     : ndim_(0),
@@ -30,14 +30,13 @@ public:
   * \brief constructor from a vector of index_t
   * \param v the vector
   */
-  Shape(const std::vector<index_t> &v)
+  explicit Shape(const std::vector<index_t> &v)
     : ndim_(v.size()) {
     if (ndim_ <= kStackCache) {
       data_heap_ = NULL;
       num_heap_allocated_ = 0;
       std::copy(v.begin(), v.end(), data_stack_);
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       std::copy(v.begin(), v.end(), data_heap_);
@@ -47,14 +46,13 @@ public:
   * \brief constructor one dimmension shape
   * \param s1 size of the first dimmension
   */
-  Shape(index_t s1)
+  explicit Shape(index_t s1)
     : ndim_(1) {
     if (ndim_ <= kStackCache) {
       data_heap_ = NULL;
       num_heap_allocated_ = 0;
       data_stack_[0] = s1;
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       data_heap_[0] = s1;
@@ -72,8 +70,7 @@ public:
       num_heap_allocated_ = 0;
       data_stack_[0] = s1;
       data_stack_[1] = s2;
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       data_heap_[0] = s1;
@@ -94,8 +91,7 @@ public:
       data_stack_[0] = s1;
       data_stack_[1] = s2;
       data_stack_[2] = s3;
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       data_heap_[0] = s1;
@@ -119,8 +115,7 @@ public:
       data_stack_[1] = s2;
       data_stack_[2] = s3;
       data_stack_[3] = s4;
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       data_heap_[0] = s1;
@@ -147,8 +142,7 @@ public:
       data_stack_[2] = s3;
       data_stack_[3] = s4;
       data_stack_[4] = s5;
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       data_heap_[0] = s1;
@@ -168,8 +162,7 @@ public:
       data_heap_ = NULL;
       num_heap_allocated_ = 0;
       std::copy(s.data_stack_, s.data_stack_ + ndim_, data_stack_);
-    }
-    else {
+    } else {
       data_heap_ = new index_t[ndim_];
       num_heap_allocated_ = ndim_;
       std::copy(s.data_heap_, s.data_heap_ + ndim_, data_heap_);
@@ -275,8 +268,7 @@ public:
       for (index_t i = 0; i < ndim_; ++i) {
         if (data_stack_[i] != s.data_stack_[i]) return false;
       }
-    }
-    else {
+    } else {
       for (index_t i = 0; i < ndim_; ++i) {
         if (data_heap_[i] != s.data_heap_[i]) return false;
       }
@@ -294,7 +286,7 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const Shape &shape);
   friend std::istream &operator>>(std::istream &is, Shape &shape);
 
-private:
+ private:
   // the shape will be stored in data_stack_
   // when dimension is smaller than kStackCache
   // when it is bigger, it will be stored in data_heap_;
@@ -378,11 +370,9 @@ inline std::istream &operator>>(std::istream &is, Shape &shape) {
         break;
       }
       if (ch == ')') break;
-    }
-    else if (ch == ')') {
+    } else if (ch == ')') {
       break;
-    }
-    else {
+    } else {
       is.setstate(std::ios::failbit);
       return is;
     }
@@ -391,7 +381,7 @@ inline std::istream &operator>>(std::istream &is, Shape &shape) {
   return is;
 }
 
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
-#endif // MXNET_CPP_ShapeImpl_H
+#endif  // MXNET_CPP_ShapeImpl_H

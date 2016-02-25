@@ -12,7 +12,7 @@
 
 namespace mxnet {
 namespace cpp {
-  
+
 typedef unsigned index_t;
 
 enum OpReqType {
@@ -30,7 +30,7 @@ enum OpReqType {
   kAddTo
 };
 
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
-#endif // MXNETCPP_BASE_H
+#endif  // MXNETCPP_BASE_H

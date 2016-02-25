@@ -9,6 +9,7 @@
 #define MXNETCPP_OPERATOR_HPP
 
 #include <string>
+#include <vector>
 #include "base.h"
 #include "op_map.h"
 #include "operator.h"
@@ -50,7 +51,7 @@ Operator &Operator::SetInput(const std::string &name, Symbol symbol) {
   input_values.push_back(symbol.GetHandle());
   return *this;
 }
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
 #endif  // MXNETCPP_OPERATOR_HPP

@@ -9,6 +9,7 @@
 #define MXNETCPP_MXNET_H
 
 #include <map>
+#include <string>
 #include "base.h"
 #include "logging.h"
 
@@ -21,7 +22,7 @@ namespace cpp {
 *  This is used internally by Symbol and Operator.
 */
 class OpMap {
-public:
+ public:
   /*!
   * \brief Create an Mxnet instance
   */
@@ -56,11 +57,12 @@ public:
   inline AtomicSymbolCreator GetSymbolCreator(const std::string &name) {
     return symbol_creators_[name];
   }
-private:
+
+ private:
   std::map<std::string, AtomicSymbolCreator> symbol_creators_;
 };
 
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
-#endif // MXNETCPP_MXNET_H
+#endif  // MXNETCPP_MXNET_H

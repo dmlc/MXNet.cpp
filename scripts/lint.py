@@ -49,7 +49,8 @@ class LintHelper(object):
         _ = cpplint.ParseArguments(cpplint_args)
         cpplint._SetFilters(','.join(['-build/c++11',
                                       '-build/namespaces',
-                                      '-build/include,',
+                                      '-build/include',
+                                      '-build/header_guard',
                                       '+build/include_what_you_use',
                                       '+build/include_order']))
         cpplint._SetCountingStyle('toplevel')

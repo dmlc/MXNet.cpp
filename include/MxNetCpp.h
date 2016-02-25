@@ -8,7 +8,6 @@
 #ifndef MXNETCPP_H_
 #define MXNETCPP_H_
 
-#include "MxNetCpp.hpp"
 #include "executor.hpp"
 #include "symbol.hpp"
 #include "ndarray.hpp"

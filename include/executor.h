@@ -8,6 +8,7 @@
 #ifndef MXNETCPP_EXECUTOR_H
 #define MXNETCPP_EXECUTOR_H
 
+#include <vector>
 #include "base.h"
 #include "symbol.h"
 
@@ -91,6 +92,6 @@ class Executor {
   Executor &operator=(const Executor &e);
   ExecutorHandle handle_;
 };
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 #endif  // MXNETCPP_EXECUTOR_H

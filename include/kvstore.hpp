@@ -5,9 +5,14 @@
  * \author Xin Li
  */
 
+#include <algorithm>
+#include <map>
+#include <numeric>
+#include <string>
+#include <vector>
+
 #include "kvstore.h"
 #include "optimizer.h"
-#include <numeric>
 
 #ifndef KVSTORE_HPP
 #define KVSTORE_HPP
@@ -43,7 +48,7 @@ namespace private_ {
       kvstore->SetOptimizer(std::move(opt));
     }
   }
-}
+}  // namespace private_
 
 KVStore::KVStore(const std::string& name) {
   CHECK_EQ(MXKVStoreCreate(name.c_str(), &handle_), 0);
@@ -91,16 +96,16 @@ void KVStore::Push(const std::vector<int>& keys,
       val_handles.data(), priority), 0);
 }
 
-void KVStore::Pull(int key, NDArray& out, int priority) {
-  NDArrayHandle out_handle = out.GetHandle();
+void KVStore::Pull(int key, NDArray* out, int priority) {
+  NDArrayHandle out_handle = out->GetHandle();
   CHECK_EQ(MXKVStorePull(handle_, 1, &key, &out_handle, priority), 0);
 }
 
-void KVStore::Pull(const std::vector<int>& keys, std::vector<NDArray>& outs, int priority) {
-  CHECK_EQ(keys.size(), outs.size());
+void KVStore::Pull(const std::vector<int>& keys, std::vector<NDArray>* outs, int priority) {
+  CHECK_EQ(keys.size(), outs->size());
 
   std::vector<NDArrayHandle> out_handles(keys.size());
-  std::transform(outs.cbegin(), outs.cend(), out_handles.begin(),
+  std::transform(outs->cbegin(), outs->cend(), out_handles.begin(),
       [](const NDArray& val) {
         return val.GetHandle();
       });
@@ -164,4 +169,4 @@ std::string KVStore::GetRole() const {
 }  // namespace cpp
 }  // namespace mxnet
 
-#endif /* end of include guard: KVSTORE_HPP */
+#endif  // KVSTORE_HPP

@@ -8,6 +8,8 @@
 #ifndef MXNETCPP_NDARRAY_HPP
 #define MXNETCPP_NDARRAY_HPP
 
+#include <map>
+#include <string>
 #include <vector>
 #include "logging.h"
 #include "ndarray.h"
