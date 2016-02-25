@@ -19,6 +19,11 @@ mlp: ./mlp.cpp
 	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
 	-rm -f $(basename $@).o
 
+# For simplicity, no link here
+travis:
+	$(CXX) -c -std=c++0x $(CFLAGS) ./mlp.cpp && rm -f mlp.o
+	$(CXX) -c -std=c++0x $(CFLAGS) ./lenet.cpp && rm -f lenet.o
+
 clean:
 	-rm -f mlp
 	-rm -f lenet
