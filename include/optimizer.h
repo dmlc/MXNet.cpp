@@ -9,6 +9,7 @@
 #define MXNETCPP_OPTIMIZER_H
 
 #include <map>
+#include <string>
 #include "base.h"
 #include "logging.h"
 #include "ndarray.h"
@@ -68,7 +69,7 @@ class Optimizer {
   */
   std::string Serialize() const;
 
-private:
+ private:
   bool init_;
   mx_float learning_rate_, weight_decay_;
   std::string opt_type_;
@@ -78,7 +79,7 @@ private:
   OptimizerCreator creator_;
   std::map<std::string, std::string> params_;
 };
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
 #endif  // MXNETCPP_OPTIMIZER_H

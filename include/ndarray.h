@@ -8,9 +8,10 @@
 #ifndef MXNETCPP_NDARRAY_H
 #define MXNETCPP_NDARRAY_H
 
-#include <memory>
-#include <vector>
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #include "base.h"
 #include "shape.h"
 
@@ -342,7 +343,7 @@ class NDArray {
  private:
   std::shared_ptr<NDBlob> blob_ptr_;
 };
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
 #endif  // MXNETCPP_NDARRAY_H

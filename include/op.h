@@ -201,7 +201,7 @@ inline Symbol Activation(const std::string& symbol_name,
     "tanh"
   };
   return Operator("Activation")
-           .SetParam("act_type", ActivationActTypeValues[int(act_type)])
+           .SetParam("act_type", ActivationActTypeValues[static_cast<int>(act_type)])
            .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
@@ -269,7 +269,7 @@ inline Symbol Cast(const std::string& symbol_name,
     "uint8"
   };
   return Operator("Cast")
-           .SetParam("dtype", CastDtypeValues[int(dtype)])
+           .SetParam("dtype", CastDtypeValues[static_cast<int>(dtype)])
            .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
@@ -317,9 +317,9 @@ inline Symbol Convolution(const std::string& symbol_name,
                           Symbol bias,
                           Shape kernel,
                           int num_filter,
-                          Shape stride = Shape(1,1),
-                          Shape dilate = Shape(1,1),
-                          Shape pad = Shape(0,0),
+                          Shape stride = Shape(1, 1),
+                          Shape dilate = Shape(1, 1),
+                          Shape pad = Shape(0, 0),
                           int num_group = 1,
                           int64_t workspace = 512,
                           bool no_bias = false) {
@@ -353,8 +353,8 @@ inline Symbol Convolution(const std::string& symbol_name,
  */
 inline Symbol Crop(const std::string& symbol_name,
                    int num_args,
-                   Shape offset = Shape(0,0),
-                   Shape h_w = Shape(0,0),
+                   Shape offset = Shape(0, 0),
+                   Shape h_w = Shape(0, 0),
                    bool center_crop = false) {
   return Operator("Crop")
            .SetParam("num_args", num_args)
@@ -385,8 +385,8 @@ inline Symbol Deconvolution(const std::string& symbol_name,
                             Symbol bias,
                             Shape kernel,
                             int num_filter,
-                            Shape stride = Shape(1,1),
-                            Shape pad = Shape(0,0),
+                            Shape stride = Shape(1, 1),
+                            Shape pad = Shape(0, 0),
                             int num_group = 1,
                             int64_t workspace = 512,
                             bool no_bias = true) {
@@ -537,7 +537,7 @@ inline Symbol LeakyReLU(const std::string& symbol_name,
     "rrelu"
   };
   return Operator("LeakyReLU")
-           .SetParam("act_type", LeakyReLUActTypeValues[int(act_type)])
+           .SetParam("act_type", LeakyReLUActTypeValues[static_cast<int>(act_type)])
            .SetParam("slope", slope)
            .SetParam("lower_bound", lower_bound)
            .SetParam("upper_bound", upper_bound)
@@ -593,8 +593,8 @@ inline Symbol Pooling(const std::string& symbol_name,
                       Symbol data,
                       Shape kernel,
                       PoolingPoolType pool_type,
-                      Shape stride = Shape(1,1),
-                      Shape pad = Shape(0,0)) {
+                      Shape stride = Shape(1, 1),
+                      Shape pad = Shape(0, 0)) {
   static const char *PoolingPoolTypeValues[] = {
     "avg",
     "max",
@@ -602,7 +602,7 @@ inline Symbol Pooling(const std::string& symbol_name,
   };
   return Operator("Pooling")
            .SetParam("kernel", kernel)
-           .SetParam("pool_type", PoolingPoolTypeValues[int(pool_type)])
+           .SetParam("pool_type", PoolingPoolTypeValues[static_cast<int>(pool_type)])
            .SetParam("stride", stride)
            .SetParam("pad", pad)
            .SetInput("data", data)
@@ -751,7 +751,7 @@ inline Symbol SoftmaxActivation(const std::string& symbol_name,
     "instance"
   };
   return Operator("SoftmaxActivation")
-           .SetParam("type", SoftmaxActivationTypeValues[int(type)])
+           .SetParam("type", SoftmaxActivationTypeValues[static_cast<int>(type)])
            .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
@@ -876,7 +876,8 @@ inline Symbol UpSampling(const std::string& symbol_name,
                          UpSamplingSampleType sample_type,
                          int num_args,
                          int num_filter = 0,
-                         UpSamplingMultiInputMode multi_input_mode = UpSamplingMultiInputMode::concat) {
+                         UpSamplingMultiInputMode multi_input_mode =
+                             UpSamplingMultiInputMode::concat) {
   static const char *UpSamplingSampleTypeValues[] = {
     "bilinear",
     "nearest"
@@ -887,14 +888,15 @@ inline Symbol UpSampling(const std::string& symbol_name,
   };
   return Operator("UpSampling")
            .SetParam("scale", scale)
-           .SetParam("sample_type", UpSamplingSampleTypeValues[int(sample_type)])
+           .SetParam("sample_type", UpSamplingSampleTypeValues[static_cast<int>(sample_type)])
            .SetParam("num_args", num_args)
            .SetParam("num_filter", num_filter)
-           .SetParam("multi_input_mode", UpSamplingMultiInputModeValues[int(multi_input_mode)])
-(data)
+           .SetParam("multi_input_mode",
+               UpSamplingMultiInputModeValues[static_cast<int>(multi_input_mode)])
+           (data)
            .CreateSymbol(symbol_name);
 }
 
-} //namespace cpp
-} //namespace mxnet
-#endif //ifndef _MXNETOP_H
+}  // namespace cpp
+}  // namespace mxnet
+#endif  // _MXNETOP_H

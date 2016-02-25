@@ -8,7 +8,9 @@
 #ifndef MXNETCPP_OPERATOR_H
 #define MXNETCPP_OPERATOR_H
 
+#include <map>
 #include <string>
+#include <vector>
 #include "base.h"
 #include "op_map.h"
 #include "symbol.h"
@@ -115,7 +117,7 @@ class Operator {
   AtomicSymbolCreator handle_;
   static OpMap *op_map_;
 };
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
 #endif  // MXNETCPP_OPERATOR_H

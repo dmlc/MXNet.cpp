@@ -8,6 +8,9 @@
 #ifndef MXNETCPP_SYMBOL_H
 #define MXNETCPP_SYMBOL_H
 
+#include <map>
+#include <string>
+#include <vector>
 #include "base.h"
 #include "ndarray.h"
 #include "op_map.h"
@@ -230,6 +233,6 @@ class Symbol {
   std::shared_ptr<SymBlob> blob_ptr_;
   static OpMap *op_map_;
 };
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 #endif  // MXNETCPP_SYMBOL_H

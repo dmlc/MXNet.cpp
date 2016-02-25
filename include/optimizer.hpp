@@ -8,6 +8,9 @@
 #ifndef MXNETCPP_OPTIMIZER_HPP
 #define MXNETCPP_OPTIMIZER_HPP
 
+#include <map>
+#include <string>
+#include <vector>
 #include "optimizer.h"
 
 namespace mxnet {
@@ -30,7 +33,8 @@ void Optimizer::Update(int index, NDArray weight, NDArray grad) {
                                param_values.data(), &handle_);
     init_ = true;
   }
-  MXOptimizerUpdate(handle_, index, weight.GetHandle(), grad.GetHandle(), learning_rate_, weight_decay_);
+  MXOptimizerUpdate(handle_, index, weight.GetHandle(), grad.GetHandle(),
+      learning_rate_, weight_decay_);
 }
 
 std::string Optimizer::Serialize() const {
@@ -44,7 +48,7 @@ std::string Optimizer::Serialize() const {
       return sum + '\n' + i.first + '=' + i.second;
     }).substr(1);
 }
-}
-}
+}  // namespace cpp
+}  // namespace mxnet
 
 #endif  // MXNETCPP_OPTIMIZER_HPP
