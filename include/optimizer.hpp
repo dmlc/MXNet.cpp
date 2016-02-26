@@ -8,6 +8,7 @@
 #ifndef MXNETCPP_OPTIMIZER_HPP
 #define MXNETCPP_OPTIMIZER_HPP
 
+#include <numeric>
 #include <map>
 #include <string>
 #include <vector>
