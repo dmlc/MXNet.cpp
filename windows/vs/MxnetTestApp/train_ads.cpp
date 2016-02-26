@@ -10,6 +10,7 @@
 #include <vector>
 #include <thread>
 #include <numeric>
+#include <chrono>
 
 #include "MxNetCpp.h"
 #include "util.h"
@@ -19,11 +20,10 @@ using namespace mxnet::cpp;
 
 class Mlp {
 public:
-  Mlp(int workerIndex)
+  Mlp()
     : ctx_cpu(Context(DeviceType::kCPU, 0)),
-    ctx_dev(Context(DeviceType::kCPU, 0)),
-    workerIndex(workerIndex) {}
-  void Run(const std::string& filePath) {
+    ctx_dev(Context(DeviceType::kCPU, 0)) {}
+  void Run(std::string filePath) {
     /*define the symbolic net*/
     auto sym_x = Symbol::Variable("data");
     auto sym_label = Symbol::Variable("label");
@@ -76,6 +76,8 @@ public:
 
     const int nMiniBatches = 1;
     bool init_kv = false;
+    filePath.insert(filePath.rfind('.'),
+      '-' + to_string(kv.GetNumWorkers()) + '-' + to_string(kv.GetRank()));
     for (int ITER = 0; ITER < maxEpoch; ++ITER) {
       DataReader dataReader(filePath, sampleSize, batchSize);
       NDArray testData, testLabel;
@@ -88,9 +90,7 @@ public:
         samplesProcessed += nSamples;
         CHECK(!r.empty());
         vector<float> data_vec, label_vec;
-        int start = workerIndex * nSamples;
-        int end = (workerIndex+1) * nSamples;
-        for (int i = start; i < end; i++) {
+        for (int i = 0; i < nSamples; i++) {
           float * rp = r.data() + sampleSize * i;
           label_vec.push_back(*rp);
           data_vec.insert(data_vec.end(), rp + 1, rp + sampleSize);
@@ -118,8 +118,8 @@ public:
         std::vector<int> indices(exe->arg_arrays.size());
         std::iota(indices.begin(), indices.end(), 0);
         if (!init_kv) {
-          // First time, init kvstore
           kv.Init(indices, exe->arg_arrays);
+          kv.Pull(indices, &exe->arg_arrays);
           init_kv = true;
         }
         exe->Forward(true);
@@ -129,7 +129,7 @@ public:
           << "\t sample/s: " << samplesProcessed / (get_time() - sTime);
         exe->Backward();
         kv.Push(indices, exe->grad_arrays);
-        kv.Pull(indices, exe->arg_arrays);
+        kv.Pull(indices, &exe->arg_arrays);
         //exe->UpdateAll(&opt, learning_rate);
         NDArray::WaitAll();
         delete exe;
@@ -147,7 +147,6 @@ private:
   const static int batchSize = 300;
   const static int sampleSize = 601;
   const static int maxEpoch = 5;
-  const int workerIndex;
   float learning_rate = 0.01;
   float weight_decay = 1e-5;
 
@@ -202,13 +201,12 @@ private:
 };
 
 int main(int argc, char const *argv[]) {
-  CHECK_GE(argc, 2);
-  CHECK_LE(argc, 3);
-  int index = 0;
-  if (argc == 3) {
-    index = std::stoi(argv[2]);
-  }
-  Mlp mlp(index);
+  CHECK_EQ(argc, 2);
+  Mlp mlp;
+  auto start = std::chrono::steady_clock::now();
   mlp.Run(argv[1]);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>
+    (std::chrono::steady_clock::now() - start);
+  LG << "Training Duration = " << duration.count() / 1000.0 << "s";
   return 0;
 }
