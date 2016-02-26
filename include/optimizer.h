@@ -14,6 +14,7 @@
 #include "logging.h"
 #include "ndarray.h"
 #include <numeric>
+
 namespace mxnet {
 namespace cpp {
 
