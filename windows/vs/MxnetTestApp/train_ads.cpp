@@ -129,7 +129,7 @@ public:
           << "\t sample/s: " << samplesProcessed / (get_time() - sTime);
         exe->Backward();
         kv.Push(indices, exe->grad_arrays);
-        kv.Pull(indices, exe->arg_arrays);
+        kv.Pull(indices, &(exe->arg_arrays));
         //exe->UpdateAll(&opt, learning_rate);
         NDArray::WaitAll();
         delete exe;
