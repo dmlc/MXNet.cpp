@@ -3,7 +3,6 @@ sudo: false
 language: cpp
 
 os:
-  - windows
   - linux
   - osx
 
@@ -11,7 +10,7 @@ env:
   # code analysis
   - TASK=lint
   # TODO: build example
-  #- TASK=build
+  - TASK=build
 
 # dependent apt packages
 #addons:
