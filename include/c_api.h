@@ -3,6 +3,7 @@
  * \file c_api.h
  * \brief C API of mxnet
  */
+#include <stdint.h>
 #ifndef MXNET_C_API_H_
 #define MXNET_C_API_H_
 
