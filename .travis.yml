@@ -3,7 +3,6 @@ sudo: false
 language: cpp
 
 os:
-  - windows
   - linux
   - osx
 
@@ -11,20 +10,22 @@ env:
   # code analysis
   - TASK=lint
   # TODO: build example
-  #- TASK=build
+  - TASK=build
 
 # dependent apt packages
-#addons:
-#  apt:
-#    packages:
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-4.8
+      - g++-4.8
 #      - wget
 #      - git
 #      - libcurl4-openssl-dev
 #      - unzip
 #      - libatlas-dev
 #      - libopencv-dev
-#      - gcc-4.8
-#      - g++-4.8
 
 before_install:
 

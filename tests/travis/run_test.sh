@@ -13,6 +13,11 @@ if [ ${TASK} == "lint" ]; then
     exit 0
 fi
 
+if [ ${TRAVIS_OS_NAME} == "linux" ]; then
+  # use g++-4.8 in linux
+  export CXX=g++-4.8
+fi
+
 if [ ${TASK} == "build" ]; then
     make example
     exit $?
