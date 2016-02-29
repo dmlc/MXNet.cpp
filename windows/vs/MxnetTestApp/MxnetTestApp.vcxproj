@@ -42,7 +42,7 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="train_ads.cpp" />
+    <ClCompile Include="..\..\..\example\mlp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B1C99034-DA2A-43F6-B8C3-C7DC4EED5EB7}</ProjectGuid>

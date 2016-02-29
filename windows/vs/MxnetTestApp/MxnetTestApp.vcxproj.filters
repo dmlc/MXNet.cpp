@@ -75,9 +75,12 @@
     <ClInclude Include="..\..\..\include\op_map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\include\kvstore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="train_ads.cpp">
+    <ClCompile Include="..\..\..\example\mlp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
