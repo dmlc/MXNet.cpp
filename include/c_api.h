@@ -6,7 +6,8 @@
 #ifndef MXNET_C_API_H_
 #define MXNET_C_API_H_
 
-#include <stdint.h>
+#include <cstdlib>
+#include <cstdint>
 
 #ifdef __cplusplus
 #define MXNET_EXTERN_C extern "C"
