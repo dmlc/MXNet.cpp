@@ -10,7 +10,7 @@
 
 #include <algorithm>
 #include <vector>
-#include "base.h"
+#include "mxnet/base.h"
 
 namespace mxnet {
 namespace cpp {

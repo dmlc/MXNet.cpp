@@ -10,9 +10,9 @@
 
 #include <string>
 #include <vector>
-#include "base.h"
-#include "op_map.h"
-#include "operator.h"
+#include "mxnet/base.h"
+#include "mxnet/op_map.h"
+#include "mxnet/operator.h"
 
 namespace mxnet {
 namespace cpp {

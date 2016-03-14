@@ -11,8 +11,8 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "logging.h"
-#include "ndarray.h"
+#include "mxnet/logging.h"
+#include "mxnet/ndarray.h"
 
 namespace mxnet {
 namespace cpp {

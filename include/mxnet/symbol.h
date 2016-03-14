@@ -11,9 +11,9 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "base.h"
-#include "ndarray.h"
-#include "op_map.h"
+#include "mxnet/base.h"
+#include "mxnet/ndarray.h"
+#include "mxnet/op_map.h"
 
 namespace mxnet {
 namespace cpp {

@@ -10,7 +10,7 @@
 
 #include <string>
 #include <vector>
-#include "ndarray.h"
+#include "mxnet/ndarray.h"
 
 namespace mxnet {
 namespace cpp {

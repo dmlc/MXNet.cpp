@@ -8,12 +8,12 @@
 #ifndef MXNETCPP_H_
 #define MXNETCPP_H_
 
-#include "executor.hpp"
-#include "symbol.hpp"
-#include "ndarray.hpp"
-#include "operator.hpp"
-#include "optimizer.hpp"
-#include "kvstore.hpp"
-#include "op.h"
+#include "mxnet/executor.hpp"
+#include "mxnet/symbol.hpp"
+#include "mxnet/ndarray.hpp"
+#include "mxnet/operator.hpp"
+#include "mxnet/optimizer.hpp"
+#include "mxnet/kvstore.hpp"
+#include "mxnet/op.h"
 
 #endif  // MXNETCPP_H_

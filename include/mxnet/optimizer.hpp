@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "optimizer.h"
+#include "mxnet/optimizer.h"
 
 namespace mxnet {
 namespace cpp {

@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "kvstore.h"
-#include "optimizer.h"
+#include "mxnet/kvstore.h"
+#include "mxnet/optimizer.h"
 
 #ifndef KVSTORE_HPP
 #define KVSTORE_HPP
