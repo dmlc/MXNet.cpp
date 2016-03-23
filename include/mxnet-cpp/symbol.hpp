@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
-#include "mxnet/logging.h"
-#include "mxnet/symbol.h"
+#include "mxnet-cpp/logging.h"
+#include "mxnet-cpp/symbol.h"
 
 namespace mxnet {
 namespace cpp {
