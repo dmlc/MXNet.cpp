@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "mxnet/MxNetCpp.h"
+#include "mxnet-cpp/MxNetCpp.h"
 using namespace std;
 using namespace mxnet::cpp;
 

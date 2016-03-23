@@ -10,9 +10,9 @@
 
 #include <map>
 #include <string>
-#include "mxnet/base.h"
-#include "mxnet/logging.h"
-#include "mxnet/ndarray.h"
+#include "mxnet-cpp/base.h"
+#include "mxnet-cpp/logging.h"
+#include "mxnet-cpp/ndarray.h"
 
 namespace mxnet {
 namespace cpp {

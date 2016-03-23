@@ -9,8 +9,8 @@
 #define MXNETCPP_EXECUTOR_HPP
 
 #include <vector>
-#include "mxnet/executor.h"
-#include "mxnet/optimizer.h"
+#include "mxnet-cpp/executor.h"
+#include "mxnet-cpp/optimizer.h"
 
 namespace mxnet {
 namespace cpp {
