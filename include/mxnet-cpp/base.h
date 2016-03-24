@@ -9,7 +9,7 @@
 #define MXNETCPP_BASE_H
 
 #include <cstdlib>
-#include "c_api.h"
+#include "mxnet-cpp/c_api.h"
 
 namespace mxnet {
 namespace cpp {

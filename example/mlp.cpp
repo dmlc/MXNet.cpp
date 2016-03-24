@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <vector>
-#include "MxNetCpp.h"
+#include "mxnet-cpp/MxNetCpp.h"
 
 using namespace std;
 using namespace mxnet::cpp;

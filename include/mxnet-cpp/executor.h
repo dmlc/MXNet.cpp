@@ -9,8 +9,8 @@
 #define MXNETCPP_EXECUTOR_H
 
 #include <vector>
-#include "base.h"
-#include "symbol.h"
+#include "mxnet-cpp/base.h"
+#include "mxnet-cpp/symbol.h"
 
 namespace mxnet {
 namespace cpp {

@@ -12,8 +12,8 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "base.h"
-#include "shape.h"
+#include "mxnet-cpp/base.h"
+#include "mxnet-cpp/shape.h"
 
 namespace mxnet {
 namespace cpp {
