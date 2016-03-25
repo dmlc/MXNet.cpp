@@ -8,6 +8,8 @@
 #ifndef MXNET_CPP_Shape_H
 #define MXNET_CPP_Shape_H
 
+#include <istream>
+#include <ostream>
 #include <algorithm>
 #include <vector>
 #include "mxnet-cpp/base.h"
