@@ -52,8 +52,6 @@ struct SymBlob {
 */
 class Symbol {
  public:
-  // TODO(zhangcheng-qinyinghua)
-  // add more input in a single operator
   Symbol() {}
   /*!
   * \brief construct a Symbol with SymbolHandle
@@ -69,6 +67,11 @@ class Symbol {
   Symbol operator-(const Symbol &rhs);
   Symbol operator*(const Symbol &rhs);
   Symbol operator/(const Symbol &rhs);
+
+  Symbol operator+(mx_float scalar);
+  Symbol operator-(mx_float scalar);
+  Symbol operator*(mx_float scalar);
+  Symbol operator/(mx_float scalar);
   Symbol Copy() const;
   /*!
   * \brief construct a variable Symbol
