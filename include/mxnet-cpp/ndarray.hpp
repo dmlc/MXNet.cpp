@@ -328,7 +328,9 @@ void NDArray::Save(const std::string &file_name,
 void NDArray::Save(const std::string &file_name,
                    const std::vector<NDArray> &array_list) {
   std::vector<NDArrayHandle> args;
-  std::vector<const char *> keys;
+  for (const auto &t : array_list) {
+    args.push_back(t.GetHandle());
+  }
   CHECK_EQ(MXNDArraySave(file_name.c_str(), args.size(), args.data(), nullptr),
            0);
 }
