@@ -15,5 +15,6 @@
 #include "mxnet-cpp/optimizer.hpp"
 #include "mxnet-cpp/kvstore.hpp"
 #include "mxnet-cpp/op.h"
+#include "mxnet-cpp/op_suppl.h"
 
 #endif  // MXNETCPP_H_

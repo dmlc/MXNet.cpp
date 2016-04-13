@@ -16,6 +16,8 @@
 #include "mxnet-cpp/logging.h"
 #include "mxnet-cpp/symbol.h"
 
+#include "mxnet-cpp/op_suppl.h"
+
 namespace mxnet {
 namespace cpp {
 OpMap *Symbol::op_map_ = new OpMap();
@@ -28,6 +30,30 @@ Symbol::Symbol(const std::string &name) {
   blob_ptr_ = std::make_shared<SymBlob>(handle);
 }
 Symbol Symbol::Variable(const std::string &name) { return Symbol(name); }
+Symbol Symbol::operator+(const Symbol &rhs) {
+  return _Plus(*this, rhs);
+}
+Symbol Symbol::operator-(const Symbol &rhs) {
+  return _Minus(*this, rhs);
+}
+Symbol Symbol::operator*(const Symbol &rhs) {
+  return _Mul(*this, rhs);
+}
+Symbol Symbol::operator/(const Symbol &rhs) {
+  return _Div(*this, rhs);
+}
+Symbol Symbol::operator+(mx_float scalar) {
+  return _PlusScalar(*this, scalar, false);
+}
+Symbol Symbol::operator-(mx_float scalar) {
+  return _MinusScalar(*this, scalar, false);
+}
+Symbol Symbol::operator*(mx_float scalar) {
+  return _MulScalar(*this, scalar, false);
+}
+Symbol Symbol::operator/(mx_float scalar) {
+  return _DivScalar(*this, scalar, false);
+}
 Symbol Symbol::operator[](int index) {
   SymbolHandle out;
   MXSymbolGetOutput(GetHandle(), index, &out);
