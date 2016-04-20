@@ -18,91 +18,91 @@
 namespace mxnet {
 namespace cpp {
 
-Symbol _Plus(Symbol lhs, Symbol rhs) {
+inline Symbol _Plus(Symbol lhs, Symbol rhs) {
   return Operator("_Plus")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _Mul(Symbol lhs, Symbol rhs) {
+inline Symbol _Mul(Symbol lhs, Symbol rhs) {
   return Operator("_Mul")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _Minus(Symbol lhs, Symbol rhs) {
+inline Symbol _Minus(Symbol lhs, Symbol rhs) {
   return Operator("_Minus")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _Div(Symbol lhs, Symbol rhs) {
+inline Symbol _Div(Symbol lhs, Symbol rhs) {
   return Operator("_Div")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _Power(Symbol lhs, Symbol rhs) {
+inline Symbol _Power(Symbol lhs, Symbol rhs) {
   return Operator("_Power")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _Maximum(Symbol lhs, Symbol rhs) {
+inline Symbol _Maximum(Symbol lhs, Symbol rhs) {
   return Operator("_Maximum")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _Minimum(Symbol lhs, Symbol rhs) {
+inline Symbol _Minimum(Symbol lhs, Symbol rhs) {
   return Operator("_Minimum")
            .SetInput("lhs", lhs)
            .SetInput("rhs", rhs)
            .CreateSymbol();
 }
-Symbol _PlusScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _PlusScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_PlusScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
            .SetInput("lhs", lhs)
            .CreateSymbol();
 }
-Symbol _MinusScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _MinusScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_MinusScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
            .SetInput("lhs", lhs)
            .CreateSymbol();
 }
-Symbol _MulScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _MulScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_MulScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
            .SetInput("lhs", lhs)
            .CreateSymbol();
 }
-Symbol _DivScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _DivScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_DivScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
            .SetInput("lhs", lhs)
            .CreateSymbol();
 }
-Symbol _PowerScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _PowerScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_PowerScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
            .SetInput("lhs", lhs)
            .CreateSymbol();
 }
-Symbol _MaximumScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _MaximumScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_MaximumScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
            .SetInput("lhs", lhs)
            .CreateSymbol();
 }
-Symbol _MinimumScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
+inline Symbol _MinimumScalar(Symbol lhs, mx_float scalar, bool scalar_on_left) {
   return Operator("_MinimumScalar")
            .SetParam("scalar", scalar)
            .SetParam("scalar_on_left", scalar_on_left)
@@ -127,6 +127,28 @@ inline Symbol Crop(const std::string& symbol_name,
     .SetInput("arg0", data)
     .SetInput("arg1", crop_like)
     .CreateSymbol(symbol_name);
+}
+
+
+/*!
+ * \breif Slice input equally along specified axis.
+ * \param symbol_name name of the resulting symbol.
+ * \param data input symbol. 
+ * \param num_outputs Number of outputs to be sliced. 
+ * \param axis Dimension along which to slice. 
+ * \param squeeze_axis If true AND the sliced dimension becomes 1, squeeze that dimension. 
+ * \return new symbol
+ */
+inline Symbol SliceChannel(const std::string& symbol_name,
+                           Symbol data,
+                           int num_outputs,
+                           int axis = 1,
+                           bool squeeze_axis = false) {
+  return Operator("SliceChannel")
+           .SetParam("num_outputs", num_outputs)
+           .SetParam("axis", axis)
+           .SetParam("squeeze_axis", squeeze_axis) (data)
+           .CreateSymbol(symbol_name);
 }
 }  // namespace cpp
 }  // namespace mxnet

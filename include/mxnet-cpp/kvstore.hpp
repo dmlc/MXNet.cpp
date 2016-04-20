@@ -24,7 +24,7 @@ namespace private_ {
   KVStore *kvstore = nullptr;
 
   extern "C"
-  void controller(int head, const char* body) {
+  void controller(int head, const char* body, void * controller_handle) {
     if (kvstore == nullptr) {
       return;
     }
@@ -57,7 +57,7 @@ KVStore::KVStore(const std::string& name) {
 void KVStore::RunServer() {
   CHECK_NE(GetRole(), "worker");
   private_::kvstore = this;
-  CHECK_EQ(MXKVStoreRunServer(handle_, &private_::controller), 0);
+  CHECK_EQ(MXKVStoreRunServer(handle_, &private_::controller, 0), 0);
 }
 
 void KVStore::Init(int key, const NDArray& val) {
