@@ -1,5 +1,6 @@
 ﻿from ctypes import *
 import logging
+import platform
 
 class EnumType:
     name = ''
@@ -220,6 +221,7 @@ class Op:
             ret = ret + ' = ' + arg.defaultString
         return ret
 
+
 def ParseAllOps():
     """
     MXNET_DLL int MXSymbolListAtomicSymbolCreators(mx_uint *out_size,
@@ -234,6 +236,8 @@ def ParseAllOps():
                                               const char ***arg_descriptions,
                                               const char **key_var_num_args);
     """
+    if platform.system() == "Linux":
+      cdll.libmxnet = cdll.LoadLibrary('../../lib/linux/libmxnet.so')
     ListOP = cdll.libmxnet.MXSymbolListAtomicSymbolCreators
     GetOpInfo = cdll.libmxnet.MXSymbolGetAtomicSymbolInfo
     ListOP.argtypes=[POINTER(c_int), POINTER(POINTER(c_void_p))]
@@ -244,7 +248,9 @@ def ParseAllOps():
         POINTER(POINTER(c_char_p)), \
         POINTER(POINTER(c_char_p)), \
         POINTER(POINTER(c_char_p)), \
-        POINTER(c_char_p)]
+        POINTER(c_char_p), \
+        POINTER(c_char_p)
+        ]
 
     nOps = c_int()
     opHandlers = POINTER(c_void_p)()
@@ -259,19 +265,26 @@ def ParseAllOps():
         argTypes = POINTER(c_char_p)()
         argDescs = POINTER(c_char_p)()
         varArgName = c_char_p()
+        return_type = c_char_p()
+
         GetOpInfo(handler, byref(name), byref(description), \
             byref(nArgs), byref(argNames), byref(argTypes), \
-            byref(argDescs), byref(varArgName))
+            byref(argDescs), byref(varArgName), byref(return_type))
+
         if name.value.decode()[0]=='_':     # get rid of functions like __init__
             continue
+
         args = []
+
         for i in range(0, nArgs.value):
             arg = Arg(name.value.decode(),
                       argNames[i].decode(),
                       argTypes[i].decode(),
                       argDescs[i].decode())
             args.append(arg)
+
         op = Op(name.value.decode(), description.value.decode(), args)
+
         ret = ret + op.GetOpDefinitionString() + "\n"
     return ret
 
@@ -305,9 +318,9 @@ if __name__ == "__main__":
                  "\n"
                  "#include <string>\n"
                  "#include <vector>\n"
-                 "#include \"base.h\"\n"
-                 "#include \"shape.h\"\n"
-                 "#include \"MxNetCpp.h\"\n"
+                 "#include \"mxnet-cpp/base.h\"\n"
+                 "#include \"mxnet-cpp/shape.h\"\n"
+                 "#include \"mxnet-cpp/MxNetCpp.h\"\n"
                  "\n"
                  "namespace mxnet {\n"
                  "namespace cpp {\n"
@@ -316,6 +329,6 @@ if __name__ == "__main__":
                  "} //namespace cpp\n"
                  "} //namespace mxnet\n"
                  "#endif //ifndef _MXNETOP_H\n")
-    with open('../../include/op.h', 'w') as f:
+    with open('../../include/mxnet-cpp/op.h', 'w') as f:
         f.write(patternStr % ParseAllOps())
     pass
