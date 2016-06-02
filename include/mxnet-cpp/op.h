@@ -934,7 +934,7 @@ inline Symbol Reshape(const std::string& symbol_name,
                       Symbol data,
                       Shape target_shape = Shape(),
                       bool keep_highest = false,
-                       shape = Shape()) {
+                      Shape shape = Shape()) {
   return Operator("Reshape")
            .SetParam("target_shape", target_shape)
            .SetParam("keep_highest", keep_highest)
