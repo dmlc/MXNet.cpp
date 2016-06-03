@@ -45,13 +45,19 @@ namespace private_ {
       for (const auto& pair : params) {
         opt->SetParam(pair.first, pair.second);
       }
-      kvstore->SetOptimizer(std::move(opt));
+      kvstore->SetOptimizer(std::move(opt), true);
     }
   }
 }  // namespace private_
 
 KVStore::KVStore(const std::string& name) {
   CHECK_EQ(MXKVStoreCreate(name.c_str(), &handle_), 0);
+}
+
+KVStore::KVStore(KVStore &&kv) {
+  optimizer_ = std::move(kv.optimizer_);
+  handle_ = kv.handle_;
+  kv.handle_ = nullptr;
 }
 
 void KVStore::RunServer() {
@@ -123,12 +129,13 @@ namespace private_ {
   }
 }
 
-void KVStore::SetOptimizer(std::unique_ptr<Optimizer> optimizer) {
-  if (GetType().substr(0, 4) == "dist" && GetRole() == "worker") {
-    CHECK_EQ(MXKVStoreSendCommmandToServers(handle_, 0, (*optimizer).Serialize().c_str()), 0);
-  } else {
+void KVStore::SetOptimizer(std::unique_ptr<Optimizer> optimizer, bool local) {
+  local = GetType().substr(0, 4) != "dist" || GetRole() != "worker";
+  if (local) {
     optimizer_ = std::move(optimizer);
     CHECK_EQ(MXKVStoreSetUpdater(handle_, &private_::updater, optimizer_.get()), 0);
+  } else {
+    CHECK_EQ(MXKVStoreSendCommmandToServers(handle_, 0, (*optimizer).Serialize().c_str()), 0);
   }
 }
 
@@ -149,6 +156,10 @@ int KVStore::GetNumWorkers() const {
   int num_workers;
   CHECK_EQ(MXKVStoreGetGroupSize(handle_, &num_workers), 0);
   return num_workers;
+}
+
+void KVStore::Barrier() const {
+  CHECK_EQ(MXKVStoreBarrier(handle_), 0);
 }
 
 std::string KVStore::GetRole() const {
