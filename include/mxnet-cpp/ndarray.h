@@ -44,6 +44,24 @@ class Context {
   */
   int GetDeviceId() const { return id_; }
 
+  /*!
+   * \brief Return a GPU context
+   * \param device_id id of the device
+   * \return the corresponding GPU context
+   */
+  static Context gpu(int device_id = 0) {
+    return Context(DeviceType::kGPU, device_id);
+  }
+
+  /*!
+   * \brief Return a CPU context
+   * \param device_id id of the device. this is not needed by CPU
+   * \return the corresponding CPU context
+   */
+  static Context cpu(int device_id = 0) {
+    return Context(DeviceType::kCPU, device_id);
+  }
+
  private:
   DeviceType type_;
   int id_;
@@ -105,11 +123,23 @@ class NDArray {
   * \param delay_alloc whether delay the allocation
   */
   NDArray(const Shape &shape, const Context &context, bool delay_alloc = true);
-
   NDArray(const mx_float *data, size_t size);
+  /*!
+  * \brief construct a new dynamic NDArray
+  * \param data the data to create NDArray from
+  * \param shape the shape of array
+  * \param constext context of NDArray
+  */
+  NDArray(const mx_float *data, const Shape &shape, const Context &context);
+  /*!
+  * \brief construct a new dynamic NDArray
+  * \param data the data to create NDArray from
+  * \param shape the shape of array
+  * \param constext context of NDArray
+  */
+  NDArray(const std::vector<mx_float> &data, const Shape &shape,
+          const Context &context);
   explicit NDArray(const std::vector<mx_float> &data);
-  // TODO(zhangcheng-qinyinghua)
-  // implement all the operators
   NDArray operator+(mx_float scalar);
   NDArray operator-(mx_float scalar);
   NDArray operator*(mx_float scalar);
@@ -180,6 +210,7 @@ class NDArray {
   * \return reference of self
   */
   NDArray &operator/=(const NDArray &src);
+  NDArray ArgmaxChannel();
   /*!
   * \brief Do a synchronize copy from a continugous CPU memory region.
   *
@@ -209,9 +240,20 @@ class NDArray {
   *  not wrapped by NDArray(thus dependency not being tracked).
   *
   * \param data the data source to copyinto.
-  * \param size the memory size we want to copy into.
+  * \param size the memory size we want to copy into. Defualt value is Size()
   */
-  void SyncCopyToCPU(mx_float *data, size_t size);
+  void SyncCopyToCPU(mx_float *data, size_t size = 0);
+  /*!
+  * \brief Do a synchronize copy to a continugous CPU memory region.
+  *
+  *  This function will call WaitToRead before the copy is performed.
+  *  This is useful to copy data from existing memory region that are
+  *  not wrapped by NDArray(thus dependency not being tracked).
+  *
+  * \param data the data source to copyinto.
+  * \param size the memory size we want to copy into. Defualt value is Size()
+  */
+  void SyncCopyToCPU(std::vector<mx_float> *data, size_t size = 0);
   /*!
   * \brief return a new copy this NDArray
   * \param context the new context of this NDArray
@@ -255,6 +297,12 @@ class NDArray {
   * \return sliced NDArray
   */
   NDArray Slice(mx_uint begin, mx_uint end) const;
+  /*!
+  * \brief Return a reshaped NDArray that shares memory with current one
+  * \param new_shape the new shape
+  * \return reshaped NDarray
+  */
+  NDArray Reshape(const Shape &new_shape) const;
   /*!
   * \brief Block until all the pending write operations with respect
   *    to current NDArray are finished, and read can be performed.
@@ -321,6 +369,10 @@ class NDArray {
   */
   static void Save(const std::string &file_name,
                    const std::vector<NDArray> &array_list);
+  /*!
+  * \return the size of current NDArray, a.k.a. the production of all shape dims
+  */
+  size_t Size() const;
   /*!
   * \return the shape of current NDArray, in the form of mx_uint vector
   */
