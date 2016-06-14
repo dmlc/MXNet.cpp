@@ -24,10 +24,12 @@ OpMap *Symbol::op_map_ = new OpMap();
 Symbol::Symbol(SymbolHandle handle) {
   blob_ptr_ = std::make_shared<SymBlob>(handle);
 }
-Symbol::Symbol(const std::string &name) {
+Symbol::Symbol(const char *name) {
   SymbolHandle handle;
-  CHECK_EQ(MXSymbolCreateVariable(name.c_str(), &(handle)), 0);
+  CHECK_EQ(MXSymbolCreateVariable(name, &(handle)), 0);
   blob_ptr_ = std::make_shared<SymBlob>(handle);
+}
+Symbol::Symbol(const std::string &name) : Symbol(name.c_str()) {
 }
 Symbol Symbol::Variable(const std::string &name) { return Symbol(name); }
 Symbol Symbol::operator+(const Symbol &rhs) {

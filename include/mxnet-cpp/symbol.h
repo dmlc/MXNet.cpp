@@ -62,6 +62,11 @@ class Symbol {
   * \brief construct a variable Symbol
   * \param name the name of the variable
   */
+  explicit Symbol(const char *name);
+  /*!
+  * \brief construct a variable Symbol
+  * \param name the name of the variable
+  */
   explicit Symbol(const std::string &name);
   Symbol operator+(const Symbol &rhs);
   Symbol operator-(const Symbol &rhs);
