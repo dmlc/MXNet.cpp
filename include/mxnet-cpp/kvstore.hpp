@@ -130,7 +130,6 @@ namespace private_ {
 }
 
 void KVStore::SetOptimizer(std::unique_ptr<Optimizer> optimizer, bool local) {
-  local = GetType().substr(0, 4) != "dist" || GetRole() != "worker";
   if (local) {
     optimizer_ = std::move(optimizer);
     CHECK_EQ(MXKVStoreSetUpdater(handle_, &private_::updater, optimizer_.get()), 0);

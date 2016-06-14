@@ -129,6 +129,9 @@ cpplint.GetHeaderGuardCPPVariable = get_header_guard_dmlc
 def process(fname, allow_type):
     """Process a file."""
     fname = str(fname)
+    # HACK: ignore op.h which is automatically generated
+    if fname.endswith('op.h'):
+      return
     arr = fname.rsplit('.', 1)
     if fname.find('#') != -1 or arr[-1] not in allow_type:
         return
