@@ -22,7 +22,8 @@ Optimizer::Optimizer(const std::string &opt_type, mx_float learning_rate, mx_flo
   MXOptimizerFindCreator(opt_type.c_str(), &creator_);
 }
 
-void Optimizer::Update(int index, NDArray weight, NDArray grad) {
+void Optimizer::Update(int index, NDArray weight, NDArray grad, mx_float learning_rate,
+                       mx_float weight_decay) {
   if (!init_) {
     std::vector<const char *> param_keys;
     std::vector<const char *> param_values;
@@ -34,8 +35,14 @@ void Optimizer::Update(int index, NDArray weight, NDArray grad) {
                                param_values.data(), &handle_);
     init_ = true;
   }
+  learning_rate_ = learning_rate;
+  weight_decay_ = weight_decay;
   MXOptimizerUpdate(handle_, index, weight.GetHandle(), grad.GetHandle(),
       learning_rate_, weight_decay_);
+}
+
+void Optimizer::Update(int index, NDArray weight, NDArray grad) {
+  Update(index, weight, grad, learning_rate_, weight_decay_);
 }
 
 std::string Optimizer::Serialize() const {
