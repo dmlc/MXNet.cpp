@@ -933,15 +933,12 @@ inline Symbol LogisticRegressionOutput(const std::string& symbol_name,
 inline Symbol Reshape(const std::string& symbol_name,
                       Symbol data,
                       Shape target_shape = Shape(),
-                      bool keep_highest = false ) {
-                      // TODO(zhangchen-qingyinghua)
-                      // shape param is a vector, which is not registered in mxnet
-                      // comment out for now
-                      // Shape shape = Shape()) {
+                      bool keep_highest = false,
+                      Shape shape = Shape()) {
   return Operator("Reshape")
            .SetParam("target_shape", target_shape)
            .SetParam("keep_highest", keep_highest)
-           // .SetParam("shape", shape)
+           .SetParam("shape", shape)
            .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
