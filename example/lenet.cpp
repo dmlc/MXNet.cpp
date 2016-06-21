@@ -95,8 +95,6 @@ class Lenet {
 
     /*init some of the args*/
     // map<string, NDArray> args_map;
-    args_map["data"] =
-      NDArray(Shape(batch_size, 1, W, H), ctx_dev, false);
     args_map["data"] = data_array.Slice(0, batch_size).Copy(ctx_dev);
     args_map["data_label"] = label_array.Slice(0, batch_size).Copy(ctx_dev);
     NDArray::WaitAll();
