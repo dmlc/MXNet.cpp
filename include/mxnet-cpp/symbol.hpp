@@ -32,28 +32,28 @@ Symbol::Symbol(const char *name) {
 Symbol::Symbol(const std::string &name) : Symbol(name.c_str()) {
 }
 Symbol Symbol::Variable(const std::string &name) { return Symbol(name); }
-Symbol Symbol::operator+(const Symbol &rhs) {
+Symbol Symbol::operator+(const Symbol &rhs) const {
   return _Plus(*this, rhs);
 }
-Symbol Symbol::operator-(const Symbol &rhs) {
+Symbol Symbol::operator-(const Symbol &rhs) const {
   return _Minus(*this, rhs);
 }
-Symbol Symbol::operator*(const Symbol &rhs) {
+Symbol Symbol::operator*(const Symbol &rhs) const {
   return _Mul(*this, rhs);
 }
-Symbol Symbol::operator/(const Symbol &rhs) {
+Symbol Symbol::operator/(const Symbol &rhs) const {
   return _Div(*this, rhs);
 }
-Symbol Symbol::operator+(mx_float scalar) {
+Symbol Symbol::operator+(mx_float scalar) const {
   return _PlusScalar(*this, scalar, false);
 }
-Symbol Symbol::operator-(mx_float scalar) {
+Symbol Symbol::operator-(mx_float scalar) const {
   return _MinusScalar(*this, scalar, false);
 }
-Symbol Symbol::operator*(mx_float scalar) {
+Symbol Symbol::operator*(mx_float scalar) const {
   return _MulScalar(*this, scalar, false);
 }
-Symbol Symbol::operator/(mx_float scalar) {
+Symbol Symbol::operator/(mx_float scalar) const {
   return _DivScalar(*this, scalar, false);
 }
 Symbol Symbol::operator[](int index) {
@@ -328,6 +328,18 @@ Executor *Symbol::Bind(const Context &context,
                        const std::vector<NDArray> &aux_arrays) {
   return new Executor(*this, context, arg_arrays, grad_arrays, grad_reqs,
                       aux_arrays);
+}
+Symbol operator+(mx_float lhs, const Symbol &rhs) {
+  return rhs + lhs;
+}
+Symbol operator-(mx_float lhs, const Symbol &rhs) {
+  return mxnet::cpp::_RMinusScalar(lhs, rhs);
+}
+Symbol operator*(mx_float lhs, const Symbol &rhs) {
+  return rhs * lhs;
+}
+Symbol operator/(mx_float lhs, const Symbol &rhs) {
+  return mxnet::cpp::_RDivScalar(lhs, rhs);
 }
 }  // namespace cpp
 }  // namespace mxnet

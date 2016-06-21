@@ -141,12 +141,12 @@ class Op:
         for i in range(1, len(descs)):
             ret = ret + otherLineHead + descs[i] + '\n'
         return ret
-    def GetOpDefinitionString(self, indent=0):
+    def GetOpDefinitionString(self, use_name, indent=0):
         ret = ''
         indentStr = ' ' * indent
         # define enums if any
         for arg in self.args:
-            if arg.isEnum:
+            if arg.isEnum and use_name:
                 # comments
                 ret = ret + self.GenDescription(arg.description, \
                                         '/*! \\breif ', \
@@ -159,7 +159,8 @@ class Op:
                                         '/*!\n * \\breif ', \
                                         ' *        ')
         for arg in self.args:
-            ret = ret + self.GenDescription(arg.name + ' ' + arg.description, \
+            if arg.name != 'symbol_name' or use_name:
+                ret = ret + self.GenDescription(arg.name + ' ' + arg.description, \
                                         ' * \\param ', \
                                         ' *        ')
         ret = ret + " * \\return new symbol\n"
@@ -168,9 +169,10 @@ class Op:
         declFirstLine = indentStr + 'inline Symbol %s(' % self.name
         ret = ret + declFirstLine
         argIndentStr = ' ' * len(declFirstLine)
-        if len(self.args) != 0:
-            ret = ret + self.GetArgString(self.args[0])
-        for i in range(1, len(self.args)):
+        arg_start = 0 if use_name else 1
+        if len(self.args) > arg_start:
+            ret = ret + self.GetArgString(self.args[arg_start])
+        for i in range(arg_start+1, len(self.args)):
             ret = ret + ',\n'
             ret = ret + argIndentStr + self.GetArgString(self.args[i])
         ret = ret + ') {\n'
@@ -211,8 +213,11 @@ class Op:
             inputAlreadySet = True
             symbols = arg.name
             ret = ret + '(%s)\n' % symbols
-        ret = ret + indentStr + ' ' * 11 + \
-            '.CreateSymbol(symbol_name);\n'
+        ret = ret + indentStr + ' ' * 11
+        if use_name:
+            ret = ret + '.CreateSymbol(symbol_name);\n'
+        else:
+            ret = ret + '.CreateSymbol();\n'
         ret = ret + indentStr + '}\n'
         return ret
     def GetArgString(self, arg):
@@ -256,6 +261,7 @@ def ParseAllOps():
     opHandlers = POINTER(c_void_p)()
     r = ListOP(byref(nOps), byref(opHandlers))
     ret = ''
+    ret2 = ''
     for i in range(0, nOps.value):
         handler = opHandlers[i]
         name = c_char_p()
@@ -285,8 +291,9 @@ def ParseAllOps():
 
         op = Op(name.value.decode(), description.value.decode(), args)
 
-        ret = ret + op.GetOpDefinitionString() + "\n"
-    return ret
+        ret = ret + op.GetOpDefinitionString(True) + "\n"
+        ret2 = ret2 + op.GetOpDefinitionString(False) + "\n"
+    return ret + ret2
 
 if __name__ == "__main__":
     #et = EnumType(typeName = 'MyET')
