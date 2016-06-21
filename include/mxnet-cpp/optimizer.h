@@ -27,6 +27,7 @@ class Optimizer {
   * first Update
   * \param opt_type type of the optimizer
   * \param learning_rate
+  * \param weight_decay
   */
   Optimizer(const std::string &opt_type, mx_float learning_rate, mx_float weight_decay);
   /*!
@@ -51,6 +52,16 @@ class Optimizer {
     params_[name] = value_str;
     return *this;
   }
+  /*!
+  *  \brief Update a weight with gradient.
+  *  \param index the unique index for the weight.
+  *  \param weight the weight to update.
+  *  \param grad gradient for the weight.
+  *  \param learning_rate learning rate.
+  *  \param weight_decay weight decay.
+  */
+  void Update(int index, NDArray weight, NDArray grad, mx_float learning_rate,
+              mx_float weight_decay);
   /*!
   *  \brief Update a weight with gradient.
   *  \param index the unique index for the weight.
