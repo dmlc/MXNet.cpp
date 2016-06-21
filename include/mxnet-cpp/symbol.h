@@ -68,15 +68,15 @@ class Symbol {
   * \param name the name of the variable
   */
   explicit Symbol(const std::string &name);
-  Symbol operator+(const Symbol &rhs);
-  Symbol operator-(const Symbol &rhs);
-  Symbol operator*(const Symbol &rhs);
-  Symbol operator/(const Symbol &rhs);
+  Symbol operator+(const Symbol &rhs) const;
+  Symbol operator-(const Symbol &rhs) const;
+  Symbol operator*(const Symbol &rhs) const;
+  Symbol operator/(const Symbol &rhs) const;
 
-  Symbol operator+(mx_float scalar);
-  Symbol operator-(mx_float scalar);
-  Symbol operator*(mx_float scalar);
-  Symbol operator/(mx_float scalar);
+  Symbol operator+(mx_float scalar) const;
+  Symbol operator-(mx_float scalar) const;
+  Symbol operator*(mx_float scalar) const;
+  Symbol operator/(mx_float scalar) const;
   Symbol Copy() const;
   /*!
   * \brief construct a variable Symbol
@@ -241,6 +241,10 @@ class Symbol {
   std::shared_ptr<SymBlob> blob_ptr_;
   static OpMap *op_map_;
 };
+Symbol operator+(mx_float lhs, const Symbol &rhs);
+Symbol operator-(mx_float lhs, const Symbol &rhs);
+Symbol operator*(mx_float lhs, const Symbol &rhs);
+Symbol operator/(mx_float lhs, const Symbol &rhs);
 }  // namespace cpp
 }  // namespace mxnet
 #endif  // MXNETCPP_SYMBOL_H
