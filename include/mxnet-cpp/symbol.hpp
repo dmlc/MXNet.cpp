@@ -45,16 +45,16 @@ Symbol Symbol::operator/(const Symbol &rhs) const {
   return _Div(*this, rhs);
 }
 Symbol Symbol::operator+(mx_float scalar) const {
-  return _PlusScalar(*this, scalar, false);
+  return _PlusScalar(*this, scalar);
 }
 Symbol Symbol::operator-(mx_float scalar) const {
-  return _MinusScalar(*this, scalar, false);
+  return _MinusScalar(*this, scalar);
 }
 Symbol Symbol::operator*(mx_float scalar) const {
-  return _MulScalar(*this, scalar, false);
+  return _MulScalar(*this, scalar);
 }
 Symbol Symbol::operator/(mx_float scalar) const {
-  return _DivScalar(*this, scalar, false);
+  return _DivScalar(*this, scalar);
 }
 Symbol Symbol::operator[](int index) {
   SymbolHandle out;
