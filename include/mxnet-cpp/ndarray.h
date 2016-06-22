@@ -255,9 +255,15 @@ class NDArray {
   */
   void SyncCopyToCPU(std::vector<mx_float> *data, size_t size = 0);
   /*!
-  * \brief return a new copy this NDArray
-  * \param context the new context of this NDArray
+  * \brief Copy the content of current array to other.
+  * \param other the new context of this NDArray
   * \return the new copy
+  */
+  NDArray CopyTo(NDArray * other) const;
+  /*!
+  * \brief return a new copy this NDArray
+  * \param other the target NDArray
+  * \return the copy target NDarray
   */
   NDArray Copy(const Context &) const;
   /*!

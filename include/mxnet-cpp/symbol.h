@@ -230,12 +230,19 @@ class Symbol {
   * \param grad_reqs requirment type of gradient saving. Can only be in
   *{kNullOp, kAddTo, kWriteTo}.
   * \param aux_arrays NDArray that is used as internal state in op
+  * \param group_to_ctx dict of string to mx.Context
+  * \param shared_exec Executor to share memory with. This is intended for
+  *runtime reshaping, variable length sequencesn etc.  The returned executor
+  *shares state with shared_exec, and should not be used in parallel with it.
   * \return a new executor, which need to be free manually.
   */
   Executor *Bind(const Context &context, const std::vector<NDArray> &arg_arrays,
                  const std::vector<NDArray> &grad_arrays,
                  const std::vector<OpReqType> &grad_reqs,
-                 const std::vector<NDArray> &aux_arrays);
+                 const std::vector<NDArray> &aux_arrays,
+                 const std::map<std::string, Context> &group_to_ctx =
+                     std::map<std::string, Context>(),
+                 Executor *shared_exec = nullptr);
 
  private:
   std::shared_ptr<SymBlob> blob_ptr_;

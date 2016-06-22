@@ -18,5 +18,6 @@
 #include "mxnet-cpp/op_suppl.h"
 #include "mxnet-cpp/io.hpp"
 #include "mxnet-cpp/metric.h"
+#include "mxnet-cpp/initializer.h"
 
 #endif  // MXNETCPP_H_
