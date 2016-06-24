@@ -160,5 +160,5 @@ inline Symbol SliceChannel(const std::string& symbol_name,
 }  // namespace cpp
 }  // namespace mxnet
 
-
 #endif /* end of include guard: OP_SUPPL_H */
+

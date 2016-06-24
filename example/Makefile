@@ -6,7 +6,7 @@ CUDA=-DMSHADOW_USE_CUDA=1
 CFLAGS=$(COMMFLAGS) -I ../include -Wall -O3 -msse3 -funroll-loops -Wno-unused-parameter -Wno-unknown-pragmas -fopenmp 
 LDFLAGS=$(COMMFLAGS) -L ../lib/linux -lmxnet $(BLAS) $(CUDA) -lgomp -pthread
 
-all: mlp lenet lenet_with_mxdataiter
+all: mlp lenet lenet_with_mxdataiter alexnet
 
 lenet_with_mxdataiter: ./lenet_with_mxdataiter.cpp
 	$(CXX) -c -std=c++11 $(CFLAGS) $^
@@ -19,6 +19,11 @@ lenet: ./lenet.cpp
 	-rm -f $(basename $@).o
 
 mlp: ./mlp.cpp
+	$(CXX) -c -std=c++11 $(CFLAGS) $^
+	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
+	-rm -f $(basename $@).o
+
+alexnet: ./alexnet.cpp
 	$(CXX) -c -std=c++11 $(CFLAGS) $^
 	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
 	-rm -f $(basename $@).o
