@@ -157,6 +157,29 @@ inline Symbol SliceChannel(const std::string& symbol_name,
            .SetParam("squeeze_axis", squeeze_axis) (data)
            .CreateSymbol(symbol_name);
 }
+
+/*!
+ * \breif Apply activation function to input.
+ *        Softmax Activation is only available with CUDNN on GPUand will be
+ *        computed at each location across channel if input is 4D.
+ * \param symbol_name name of the resulting symbol.
+ * \param data Input data to activation function. 
+ * \param act_type Activation function to be applied. 
+ * \return new symbol
+ */
+inline Symbol Activation(const std::string& symbol_name,
+                         Symbol data,
+                         const std::string& act_type) {
+  assert(act_type == "relu" ||
+         act_type == "sigmoid" ||
+         act_type == "softrelu" ||
+         act_type == "tanh");
+  return Operator("Activation")
+           .SetParam("act_type", act_type.c_str())
+           .SetInput("data", data)
+           .CreateSymbol(symbol_name);
+}
+
 }  // namespace cpp
 }  // namespace mxnet
 
