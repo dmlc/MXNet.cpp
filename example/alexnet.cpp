@@ -1,5 +1,9 @@
+/*!
+ * Copyright (c) 2016 by Contributors
+ */
 #include <iostream>
 #include <map>
+#include <string>
 #include "mxnet-cpp/MxNetCpp.h"
 
 using namespace std;

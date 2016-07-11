@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 #include "mxnet-cpp/MxNetCpp.h"
 
 using namespace std;
@@ -45,8 +46,8 @@ void MLP() {
     string istr = to_string(i);
     weights[i] = Symbol::Variable(string("w") + istr);
     biases[i] = Symbol::Variable(string("b") + istr);
-    Symbol fc = FullyConnected(string("fc") + istr, 
-      i == 0? sym_x : outputs[i-1], 
+    Symbol fc = FullyConnected(string("fc") + istr,
+      i == 0? sym_x : outputs[i-1],
       weights[i], biases[i], layerSizes[i]);
     outputs[i] = LeakyReLU(string("act") + istr, fc, LeakyReLUActType::leaky);
   }
