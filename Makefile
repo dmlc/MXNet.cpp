@@ -5,7 +5,7 @@ endif
 .PHONY: lint example
 
 lint:
-	python scripts/lint.py dmlc ${LINT_LANG} include
+	python scripts/lint.py dmlc ${LINT_LANG} include example
 
 example:
 	make -C example travis

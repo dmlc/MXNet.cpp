@@ -3,6 +3,8 @@
  */
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 #include <opencv2/opencv.hpp>
 
 using namespace std;
@@ -19,13 +21,13 @@ void Mat2Array() {
     for (int c = 0; c < 3; ++c) {
       for (int i = 0; i < 224; ++i) {
         for (int j = 0; j < 224; ++j) {
-          array.push_back((float)(mat.data[(i * 224 + j) * 3 + c]));
+          array.push_back(static_cast<float>(mat.data[(i * 224 + j) * 3 + c]));
         }
       }
     }
   }
   ofstream outf("./img.dat", ios::binary);
-  outf.write((char *)array.data(), array.size() * sizeof(float));
+  outf.write(reinterpret_cast<char *>array.data(), array.size() * sizeof(float));
   outf.close();
 }
 

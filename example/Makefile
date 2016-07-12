@@ -28,13 +28,22 @@ alexnet: ./alexnet.cpp
 	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
 	-rm -f $(basename $@).o
 
+googlenet: ./googlenet.cpp
+	$(CXX) -c -std=c++11 $(CFLAGS) $^
+	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
+	-rm -f $(basename $@).o
+
 # For simplicity, no link here
 travis:
 	$(CXX) -c -std=c++11 $(CFLAGS) ./mlp.cpp && rm -f mlp.o
 	$(CXX) -c -std=c++11 $(CFLAGS) ./lenet.cpp && rm -f lenet.o
 	$(CXX) -c -std=c++11 $(CFLAGS) ./lenet_with_mxdataiter.cpp && rm -f lenet_with_mxdataiter.o
+	$(CXX) -c -std=c++11 $(CFLAGS) ./alexnet.cpp && rm -f alexnet.o
+	$(CXX) -c -std=c++11 $(CFLAGS) ./googlenet.cpp && rm -f googlenet.o
 
 clean:
 	-rm -f mlp
 	-rm -f lenet
 	-rm -f lenet_with_mxdataiter
+	-rm -f alexnet
+	-rm -f googlenet
