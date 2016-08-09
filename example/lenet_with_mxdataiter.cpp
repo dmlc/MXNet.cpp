@@ -36,16 +36,10 @@ Symbol LenetSymbol() {
   Symbol pool2 =
       Pooling("pool2", tanh2, Shape(2, 2), PoolingPoolType::max, false, Shape(2, 2));
 
-  Symbol conv3 =
-      Convolution("conv3", pool2, conv3_w, conv3_b, Shape(2, 2), 500);
-  Symbol tanh3 = Activation("tanh3", conv3, ActivationActType::tanh);
-  Symbol pool3 =
-      Pooling("pool3", tanh3, Shape(2, 2), PoolingPoolType::max, false, Shape(1, 1));
-
-  Symbol flatten = Flatten("flatten", pool3);
+  Symbol flatten = Flatten("flatten", pool2);
   Symbol fc1 = FullyConnected("fc1", flatten, fc1_w, fc1_b, 500);
-  Symbol tanh4 = Activation("tanh4", fc1, ActivationActType::tanh);
-  Symbol fc2 = FullyConnected("fc2", tanh4, fc2_w, fc2_b, 10);
+  Symbol tanh3 = Activation("tanh3", fc1, ActivationActType::tanh);
+  Symbol fc2 = FullyConnected("fc2", tanh3, fc2_w, fc2_b, 10);
 
   Symbol lenet = SoftmaxOutput("softmax", fc2, data_label);
 
@@ -68,17 +62,22 @@ int main(int argc, char const *argv[]) {
   args_map["data_label"] = NDArray(Shape(batch_size), Context::gpu());
   lenet.InferArgsMap(Context::gpu(), &args_map, args_map);
 
+  args_map["fc1_w"] = NDArray(Shape(500, 4 * 4 * 50), Context::gpu());
+  NDArray::SampleGaussian(0, 1, &args_map["fc1_w"]);
+  args_map["fc2_b"] = NDArray(Shape(10), Context::gpu());
+  args_map["fc2_b"] = 0;
+
   auto train_iter = MXDataIter("MNISTIter")
-                        .SetParam("image", "./train-images-idx3-ubyte")
-                        .SetParam("label", "./train-labels-idx1-ubyte")
-                        .SetParam("batch_size", batch_size)
-                        .SetParam("shuffle", 1)
-                        .SetParam("flat", 0)
-                        .CreateDataIter();
+      .SetParam("image", "./train-images-idx3-ubyte")
+      .SetParam("label", "./train-labels-idx1-ubyte")
+      .SetParam("batch_size", batch_size)
+      .SetParam("shuffle", 1)
+      .SetParam("flat", 0)
+      .CreateDataIter();
   auto val_iter = MXDataIter("MNISTIter")
-                      .SetParam("image", "./t10k-images-idx3-ubyte")
-                      .SetParam("label", "./t10k-labels-idx1-ubyte")
-                      .CreateDataIter();
+      .SetParam("image", "./t10k-images-idx3-ubyte")
+      .SetParam("label", "./t10k-labels-idx1-ubyte")
+      .CreateDataIter();
 
   Optimizer opt("ccsgd", learning_rate, weight_decay);
   opt.SetParam("momentum", 0.9).SetParam("rescale_grad", 1.0).SetParam(
