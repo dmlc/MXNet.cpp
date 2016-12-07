@@ -804,16 +804,13 @@ inline Symbol MakeLoss(const std::string& symbol_name,
 /*!
  * \breif Transpose the input matrix and return a new one.
  * \param symbol_name name of the resulting symbol.
- * \param lhs Left symbolic input to the function.
- * \param rhs Left symbolic input to the function.
+ * \param data the symbolic input to be transposed.
  * \return new symbol
  */
 inline Symbol transpose(const std::string& symbol_name,
-                        Symbol lhs,
-                        Symbol rhs) {
+                        Symbol data) {
   return Operator("transpose")
-           .SetInput("lhs", lhs)
-           .SetInput("rhs", rhs)
+           .SetInput("data", data)
            .CreateSymbol(symbol_name);
 }
 
@@ -1944,15 +1941,12 @@ inline Symbol MakeLoss(Symbol data,
 
 /*!
  * \breif Transpose the input matrix and return a new one.
- * \param lhs Left symbolic input to the function.
- * \param rhs Left symbolic input to the function.
+ * \param data the symbolic input to be transposed.
  * \return new symbol
  */
-inline Symbol transpose(Symbol lhs,
-                        Symbol rhs) {
+inline Symbol transpose(Symbol data) {
   return Operator("transpose")
-           .SetInput("lhs", lhs)
-           .SetInput("rhs", rhs)
+           .SetInput("data", data)
            .CreateSymbol();
 }
 
