@@ -367,7 +367,7 @@ void train(const string file, int batch_size, int max_epoch)
 		args_map[key + "h"] = NDArray(Shape(batch_size, num_hidden), device, false);
 	}
 	vector<mx_float> zeros(batch_size * num_hidden, 0);
-	Executor* exe = RNN.SimpleBind(device, args_map);
+	Executor* exe = RNN.SimpleBind(device, args_map, {}, {{"data", kNullOp}});
 
 	Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
 	for (auto &arg : exe->arg_dict())
