@@ -2,8 +2,8 @@
  * Copyright (c) 2016 by Contributors
  * Hua Zhang mz24cn@hotmail.com
  * The code implements C++ version charRNN for mxnet\example\rnn\char-rnn.ipynb with MXNet.cpp API.
- * The generated params file is compatiable with http://data.dmlc.ml/mxnet/data/char_lstm.zip.
- * train() and predict() has been tested (compiler: VS2015).
+ * The generated params file is compatiable with python version.
+ * train() and predict() has been verified with original data samples.
  */
 
 #pragma warning(disable: 4996)
@@ -222,33 +222,33 @@ public:
 		return L"";
 	}
 
+	void buildCharIndex(wstring& content) // This version buildCharIndex() Compatiable with python version char_rnn dictionary
+	{
+		int n = 1;
+		charIndices['\0'] = 0;
+		index2chars.push_back(0);
+		for (auto c : content)
+			if (charIndices.find(c) == charIndices.end()) {
+				charIndices[c] = n++;
+				index2chars.push_back(c);
+			}
+	}
 //	void buildCharIndex(wstring& content)
 //	{
-//		int n = 1;
-//		charIndices['\0'] = 0;
-//		index2chars.push_back(0);
 //		for (auto c : content)
-//			if (charIndices.find(c) == charIndices.end()) {
-//				charIndices[c] = n++;
-//				index2chars.push_back(c);
-//			}
+//			charIndices[c]++; // char-frequency map; then char-index map
+//		vector<tuple<wchar_t, mx_float>> characters;
+//		for (auto& iter : charIndices)
+//			characters.push_back(make_tuple(iter.first, iter.second));
+//		sort(characters.begin(), characters.end(), [](const tuple<wchar_t, mx_float>& a, const tuple<wchar_t, mx_float>& b) { return get<1>(a) > get<1>(b); });
+//		mx_float index = 1; //0 is left for zero-padding
+//		index2chars.clear();
+//		index2chars.push_back(0); //zero-padding
+//		for (auto& t : characters) {
+//			charIndices[get<0>(t)] = index++;
+//			index2chars.push_back(get<0>(t));
+//		}
 //	}
-	void buildCharIndex(wstring& content)
-	{
-		for (auto c : content)
-			charIndices[c]++; // char-frequency map; then char-index map
-		vector<tuple<wchar_t, mx_float>> characters;
-		for (auto& iter : charIndices)
-			characters.push_back(make_tuple(iter.first, iter.second));
-		sort(characters.begin(), characters.end(), [](const tuple<wchar_t, mx_float>& a, const tuple<wchar_t, mx_float>& b) { return get<1>(a) > get<1>(b); });
-		mx_float index = 1; //0 is left for zero-padding
-		index2chars.clear();
-		index2chars.push_back(0); //zero-padding
-		for (auto& t : characters) {
-			charIndices[get<0>(t)] = index++;
-			index2chars.push_back(get<0>(t));
-		}
-	}
 
 	inline wchar_t character(int i)
 	{
@@ -470,16 +470,22 @@ void predict(wstring& text, int sequence_length, const string param_file, const 
 
 int main(int argc, char** argv)
 {
-//	train("D:\\CPP\\mxnet\\example\\rnn\\char_lstm\\obama.txt", 32, 100); // this function will generate dictionary file and params file.
-
-	if (argc < 4) {
-		cout << "Usage: charRNN {params file} {dictionary file} {beginning of text}" << endl;
+	if (argc < 5) {
+		cout << "Usage for training: charRNN train {corpus file} {batch size} {max epoch}" << endl;
+		cout << "Usage for prediction: charRNN predict {params file} {dictionary file} {beginning of text}" << endl;
 		return 0;
 	}
-	wstring text;// = L"If there is anyone out there who still doubts ";
-	for (char c : string(argv[3])) // Considering of extending to Chinese samples in future, use wchar_t instead of char
-		text.push_back((wchar_t) c);
-	predict(text, 600, argv[1], argv[2]);
-	wcout << text << endl;
+
+	string task = argv[1];
+	if (task == "train")
+		train(argv[2], atoi(argv[3]), atoi(argv[4])); // this function will generate dictionary file and params file.
+	else if (task == "predict") {
+		wstring text;// = L"If there is anyone out there who still doubts ";
+		for (char c : string(argv[4])) // Considering of extending to Chinese samples in future, use wchar_t instead of char
+			text.push_back((wchar_t) c);
+		predict(text, 600, argv[2], argv[3]);
+		wcout << text << endl;
+	}
+
 	MXNotifyShutdown();
 }
