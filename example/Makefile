@@ -6,7 +6,7 @@ CUDA=-DMSHADOW_USE_CUDA=1
 CFLAGS=$(COMMFLAGS) -I ../include -Wall -O3 -msse3 -funroll-loops -Wno-unused-parameter -Wno-unknown-pragmas -fopenmp 
 LDFLAGS=$(COMMFLAGS) -L ../lib/linux -lmxnet $(BLAS) $(CUDA) -lgomp -pthread
 
-all: mlp lenet lenet_with_mxdataiter alexnet googlenet inception_bn resnet
+all: mlp lenet lenet_with_mxdataiter alexnet googlenet inception_bn resnet lstm
 
 lenet_with_mxdataiter: ./lenet_with_mxdataiter.cpp
 	$(CXX) -c -std=c++11 $(CFLAGS) $^
@@ -43,6 +43,11 @@ resnet: ./resnet.cpp
 	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
 	-rm -f $(basename $@).o
 
+lstm: ./lstm.cpp
+	$(CXX) -c -std=c++11 $(CFLAGS) $^
+	$(CXX) $(basename $@).o -o $@ $(LDFLAGS)
+	-rm -f $(basename $@).o
+
 # For simplicity, no link here
 travis:
 	$(CXX) -c -std=c++11 $(CFLAGS) ./mlp.cpp && rm -f mlp.o
@@ -52,6 +57,7 @@ travis:
 	$(CXX) -c -std=c++11 $(CFLAGS) ./googlenet.cpp && rm -f googlenet.o
 	$(CXX) -c -std=c++11 $(CFLAGS) ./inception_bn.cpp && rm -f inception_bn.o
 	$(CXX) -c -std=c++11 $(CFLAGS) ./resnet.cpp && rm -f resnet.o
+	$(CXX) -c -std=c++11 $(CFLAGS) ./lstm.cpp && rm -f lstm.o
 
 
 clean:
