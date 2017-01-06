@@ -401,7 +401,7 @@ void train(const string file, int batch_size, int max_epoch)
 		auto toc = chrono::system_clock::now();
 		cout << "Epoch[" << epoch << "] Time Cost:" << chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
 		OutputPerplexity(exe->arg_dict()["softmax_label"], exe->outputs[0]);
-		sprintf(filepath, "%s-%04d.params", prefix, epoch + 1);
+		sprintf(filepath, "%s-%04d.params", prefix.c_str(), epoch + 1);
 		SaveCheckpoint(filepath, RNN, exe);
 	}
 }
