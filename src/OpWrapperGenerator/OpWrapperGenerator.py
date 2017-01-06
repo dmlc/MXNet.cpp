@@ -1,6 +1,7 @@
 ﻿from ctypes import *
 import logging
 import platform
+import re
 
 class EnumType:
     name = ''
@@ -72,7 +73,9 @@ class Arg:
         if typeString.find('default=') != -1:
             self.hasDefault = True
             self.defaultString = typeString.split('default=')[1].strip().strip("'")
-            if self.isEnum:
+            if typeString.startswith('string'):
+                self.defaultString = '"' + self.defaultString + '"'
+            elif self.isEnum:
                 self.defaultString = self.enum.GetDefaultValueString(self.defaultString)
             elif self.defaultString == 'False':
                 self.defaultString = 'false'
@@ -117,29 +120,28 @@ class Op:
     def WrapDescription(self, desc = ''):
         ret = []
         sentences = desc.split('.')
-        if (len(sentences[0]) < 80 and sentences[0][-1] != ','):
-            ret.append(sentences[0] + '.')
-            if len(sentences) == 1:
-                return ret
-            desc = desc[len(sentences[0]) + 1:].strip()           
-        while (len(desc) > 70):
-            # break into more lines
-            newline = desc[:desc.rfind(' ', 0, 70)]
-            ret.append(newline)
-            desc = desc[len(newline):].strip()
-        if (len(desc) < 10):
-            ret[-1] = ret[-1] + ' ' + desc
-        else:
-            ret.append(desc)
+        lines = desc.split('\n')
+        for line in lines:
+          line = line.strip()
+          if len(line) <= 70:
+            ret.append(line.strip())
+          else:
+            while len(line) > 70:
+              pos = line.rfind(' ', 0, 70)
+              ret.append(line[:pos].strip())
+              line = line[pos:]
         return ret
     def GenDescription(self, desc = '', \
                         firstLineHead = ' * \\brief ', \
                         otherLineHead = ' *        '):
         ret = ''
         descs = self.WrapDescription(desc)
-        ret = ret + firstLineHead + descs[0] + '\n'
+        ret = ret + firstLineHead
+        if len(descs) == 0:
+          return ret.rstrip()
+        ret = (ret + descs[0]).rstrip() + '\n'
         for i in range(1, len(descs)):
-            ret = ret + otherLineHead + descs[i] + '\n'
+            ret = ret + (otherLineHead + descs[i]).rstrip() + '\n'
         return ret
     def GetOpDefinitionString(self, use_name, indent=0):
         ret = ''
