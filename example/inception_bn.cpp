@@ -41,6 +41,7 @@ Symbol InceptionFactoryA(Symbol data, int num_1x1, int num_3x3red,
                         Shape(1, 1), name + "_double_3x3_1");
   Symbol pooling = Pooling(name + "_pool", data,
                            Shape(3, 3), pool, false,
+                           PoolingPoolingConvention::valid,
                            Shape(1, 1), Shape(1, 1));
   Symbol cproj = ConvFactoryBN(pooling, proj, Shape(1, 1), Shape(1, 1),
                                Shape(0, 0), name + "_proj");
@@ -67,7 +68,7 @@ Symbol InceptionFactoryB(Symbol data, int num_3x3red, int num_3x3,
                         Shape(1, 1), name + "_double_3x3_1");
   Symbol pooling = Pooling("max_pool_" + name + "_pool", data,
                            Shape(3, 3), PoolingPoolType::max,
-                           false, Shape(2, 2));
+                           false, PoolingPoolingConvention::valid, Shape(2, 2));
   std::vector<Symbol> lst;
   lst.push_back(c3x3);
   lst.push_back(cd3x3);
@@ -82,12 +83,14 @@ Symbol InceptionSymbol(int num_classes) {
 
   // stage 1
   Symbol conv1 = ConvFactoryBN(data, 64, Shape(7, 7), Shape(2, 2), Shape(3, 3), "conv1");
-  Symbol pool1 = Pooling("pool1", conv1, Shape(3, 3), PoolingPoolType::max, false, Shape(2, 2));
+  Symbol pool1 = Pooling("pool1", conv1, Shape(3, 3), PoolingPoolType::max,
+      false, PoolingPoolingConvention::valid, Shape(2, 2));
 
   // stage 2
   Symbol conv2red = ConvFactoryBN(pool1, 64, Shape(1, 1), Shape(1, 1),  Shape(0, 0), "conv2red");
   Symbol conv2 = ConvFactoryBN(conv2red, 192, Shape(3, 3), Shape(1, 1), Shape(1, 1), "conv2");
-  Symbol pool2 = Pooling("pool2", conv2, Shape(3, 3), PoolingPoolType::max, false, Shape(2, 2));
+  Symbol pool2 = Pooling("pool2", conv2, Shape(3, 3), PoolingPoolType::max,
+      false, PoolingPoolingConvention::valid, Shape(2, 2));
 
   // stage 3
   Symbol in3a = InceptionFactoryA(pool2, 64, 64, 64, 64, 96, PoolingPoolType::avg, 32, "3a");

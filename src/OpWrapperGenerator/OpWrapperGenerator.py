@@ -1,4 +1,5 @@
 ﻿from ctypes import *
+from ctypes.util import find_library
 import logging
 import platform
 import re
@@ -46,10 +47,14 @@ class Arg:
     typeDict = {'boolean':'bool',\
         'Shape(tuple)':'Shape',\
         'Symbol':'Symbol',\
+        'NDArray':'Symbol',\
         'Symbol[]':'const std::vector<Symbol>&',\
+        'NDArray[]':'const std::vector<Symbol>&',\
         'float':'mx_float',\
+        'real_t':'mx_float',\
         'int':'int',\
         'long':'int64_t',\
+        'double':'double',\
         'string':'const std::string&'}
     name = ''
     type = ''
@@ -245,6 +250,8 @@ def ParseAllOps():
     """
     if platform.system() == "Linux":
       cdll.libmxnet = cdll.LoadLibrary('../../lib/linux/libmxnet.so')
+    else:
+      cdll.libmxnet = cdll.LoadLibrary(find_library('mxnet'))
     ListOP = cdll.libmxnet.MXSymbolListAtomicSymbolCreators
     GetOpInfo = cdll.libmxnet.MXSymbolGetAtomicSymbolInfo
     ListOP.argtypes=[POINTER(c_int), POINTER(POINTER(c_void_p))]
@@ -285,6 +292,8 @@ def ParseAllOps():
         args = []
 
         for i in range(0, nArgs.value):
+            if name.value.decode() == 'ElementWiseSum':
+                print argNames[i].decode() + argTypes[i].decode()
             arg = Arg(name.value.decode(),
                       argNames[i].decode(),
                       argTypes[i].decode(),
