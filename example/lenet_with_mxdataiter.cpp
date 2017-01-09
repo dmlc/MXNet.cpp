@@ -79,9 +79,10 @@ int main(int argc, char const *argv[]) {
       .SetParam("label", "./t10k-labels-idx1-ubyte")
       .CreateDataIter();
 
-  Optimizer opt("ccsgd", learning_rate, weight_decay);
-  opt.SetParam("momentum", 0.9).SetParam("rescale_grad", 1.0).SetParam(
-      "clip_gradient", 10);
+  Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+  opt->SetParam("momentum", 0.9)
+     ->SetParam("rescale_grad", 1.0)
+     ->SetParam("clip_gradient", 10);
 
   for (int iter = 0; iter < max_epoch; ++iter) {
     LG << "Epoch: " << iter;
@@ -94,7 +95,7 @@ int main(int argc, char const *argv[]) {
       auto *exec = lenet.SimpleBind(Context::gpu(), args_map);
       exec->Forward(true);
       exec->Backward();
-      exec->UpdateAll(&opt, learning_rate, weight_decay);
+      exec->UpdateAll(opt, learning_rate, weight_decay);
       delete exec;
     }
 

@@ -112,10 +112,10 @@ class Lenet {
     // args_map["fc1_b"] = 0;
 
     lenet.InferArgsMap(ctx_dev, &args_map, args_map);
-    Optimizer opt("ccsgd", learning_rate, weight_decay);
-    opt.SetParam("momentum", 0.9)
-        .SetParam("rescale_grad", 1.0)
-        .SetParam("clip_gradient", 10);
+    Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+    opt->SetParam("momentum", 0.9)
+       ->SetParam("rescale_grad", 1.0)
+       ->SetParam("clip_gradient", 10);
 
     for (int ITER = 0; ITER < max_epoch; ++ITER) {
       size_t start_index = 0;
@@ -135,7 +135,7 @@ class Lenet {
         Executor *exe = lenet.SimpleBind(ctx_dev, args_map);
         exe->Forward(true);
         exe->Backward();
-        exe->UpdateAll(&opt, learning_rate, weight_decay);
+        exe->UpdateAll(opt, learning_rate, weight_decay);
 
         delete exe;
       }

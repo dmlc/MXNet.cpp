@@ -83,7 +83,8 @@ Symbol GoogleNetSymbol(int num_classes) {
                          false, PoolingPoolingConvention::valid, Shape(2, 2));
   Symbol in5a = InceptionFactory(pool5, 256, 160, 320, 32, 128, PoolingPoolType::max, 128, "in5a");
   Symbol in5b = InceptionFactory(in5a, 384, 192, 384, 48, 128, PoolingPoolType::max, 128, "in5b");
-  Symbol pool6 = Pooling("pool6", in5b, Shape(7, 7), PoolingPoolType::avg, false, PoolingPoolingConvention::valid, Shape(1, 1));
+  Symbol pool6 = Pooling("pool6", in5b, Shape(7, 7), PoolingPoolType::avg,
+      false, PoolingPoolingConvention::valid, Shape(1, 1));
 
   Symbol flatten = Flatten("flatten", pool6);
 
@@ -122,10 +123,10 @@ int main(int argc, char const *argv[]) {
       .SetParam("batch_size", batch_size)
       .CreateDataIter();
 
-  Optimizer opt("ccsgd", learning_rate, weight_decay);
-  opt.SetParam("momentum", 0.9)
-      .SetParam("rescale_grad", 1.0 / batch_size)
-      .SetParam("clip_gradient", 10);
+  Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+  opt->SetParam("momentum", 0.9)
+     ->SetParam("rescale_grad", 1.0 / batch_size)
+     ->SetParam("clip_gradient", 10);
 
   for (int iter = 0; iter < max_epoch; ++iter) {
     LG << "Epoch: " << iter;
@@ -138,7 +139,7 @@ int main(int argc, char const *argv[]) {
       auto *exec = googlenet.SimpleBind(Context::gpu(), args_map);
       exec->Forward(true);
       exec->Backward();
-      exec->UpdateAll(&opt, learning_rate, weight_decay);
+      exec->UpdateAll(opt, learning_rate, weight_decay);
       delete exec;
     }
 
