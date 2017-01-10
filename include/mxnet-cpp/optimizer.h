@@ -97,6 +97,7 @@ class OptimizerRegistry {
   OptimizerRegistry() = delete;
   ~OptimizerRegistry() = delete;
 };
+std::map<std::string, OptimizerCreator> OptimizerRegistry::cmap_;
 
 #define MXNETCPP_REGISTER_OPTIMIZER(Name, OptimizerType)          \
   static int __make_ ## OptimizerType ## _ ## Name ## __ = \
