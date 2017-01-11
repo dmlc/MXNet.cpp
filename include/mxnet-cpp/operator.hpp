@@ -8,6 +8,7 @@
 #ifndef MXNETCPP_OPERATOR_HPP
 #define MXNETCPP_OPERATOR_HPP
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include "mxnet-cpp/base.h"
@@ -51,7 +52,7 @@ Operator::Operator(const std::string &operator_name) {
       &arg_type_infos,
       &arg_descriptions,
       &key_var_num_args);
-  for (mx_uint i=0; i<num_args; ++i) {
+  for (mx_uint i = 0; i < num_args; ++i) {
     arg_names_.push_back(arg_names[i]);
   }
 }

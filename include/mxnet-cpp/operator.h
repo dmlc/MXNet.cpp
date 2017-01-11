@@ -72,7 +72,7 @@ class Operator {
   * \brief add an input symbol
   * \param symbol the input symbol
   */
-  template<int N=0>
+  template<int N = 0>
   void PushInput(const Symbol &symbol) {
     input_symbols.push_back(symbol.GetHandle());
   }
@@ -119,14 +119,14 @@ class Operator {
   * \brief add an input ndarray
   * \param ndarray the input ndarray
   */
-  template<int N=0>
+  template<int N = 0>
   void PushInput(const NDArray &ndarray) {
     input_ndarrays.push_back(ndarray.GetHandle());
   }
   /*!
   * \brief add positional inputs
   */
-  template <class T, class... Args, int N=0>
+  template <class T, class... Args, int N = 0>
   void PushInput(const T &t, Args... args) {
     SetParam(N, t);
     PushInput<Args..., N+1>(args...);
@@ -134,7 +134,7 @@ class Operator {
   /*!
   * \brief add the last positional input
   */
-  template <class T, int N=0>
+  template <class T, int N = 0>
   void PushInput(const T &t) {
     SetParam(N, t);
   }
