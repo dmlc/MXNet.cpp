@@ -100,16 +100,16 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
 	auto label = Symbol::Variable("softmax_label");
 	label = transpose(label);
 	label = Reshape(label, Shape(0));
-    auto sm = SoftmaxOutput("softmax", pred, label);
-    if (sequence_length == 1) {
-    	vector<Symbol> outputs = { sm };
-    	for (auto& state : last_states) {
-    		outputs.push_back(state.C);
-    		outputs.push_back(state.h);
-    	}
-    	return Symbol::Group(outputs);
-    }
-    return sm;
+	auto sm = SoftmaxOutput("softmax", pred, label);
+	if (sequence_length == 1) {
+		vector<Symbol> outputs = { sm };
+		for (auto& state : last_states) {
+			outputs.push_back(state.C);
+			outputs.push_back(state.h);
+		}
+		return Symbol::Group(outputs);
+	}
+	return sm;
 }
 
 class Shuffler {
