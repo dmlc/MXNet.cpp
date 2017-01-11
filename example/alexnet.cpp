@@ -235,10 +235,10 @@ int main(int argc, char const *argv[]) {
                       .SetParam("batch_size", batch_size)
                       .CreateDataIter();
 
-  Optimizer opt("ccsgd", learning_rate, weight_decay);
-  opt.SetParam("momentum", 0.9)
-      .SetParam("rescale_grad", 1.0 / batch_size)
-      .SetParam("clip_gradient", 10);
+  Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+  opt->SetParam("momentum", 0.9)
+     ->SetParam("rescale_grad", 1.0 / batch_size)
+     ->SetParam("clip_gradient", 10);
 
   Accuracy acu_train, acu_val;
   LogLoss logloss_val;
@@ -256,7 +256,7 @@ int main(int argc, char const *argv[]) {
       batch.label.CopyTo(&args_map["label"]);
       exec->Forward(true);
       exec->Backward();
-      exec->UpdateAll(&opt, learning_rate, weight_decay);
+      exec->UpdateAll(opt, learning_rate, weight_decay);
       NDArray::WaitAll();
       acu_train.Update(batch.label, exec->outputs[0]);
     }

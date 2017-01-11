@@ -4,7 +4,8 @@ language: cpp
 
 os:
   - linux
-  - osx
+# disable for now since clang doesn't support openmp
+#  - osx
 
 env:
   # code analysis

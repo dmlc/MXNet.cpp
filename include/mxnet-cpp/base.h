@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include "mxnet-cpp/c_api.h"
+#include "mxnet-cpp/nnvm_c_api.h"
 
 namespace mxnet {
 namespace cpp {

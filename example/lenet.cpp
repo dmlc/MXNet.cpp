@@ -34,20 +34,20 @@ class Lenet {
     Symbol conv1 =
         Convolution("conv1", data, conv1_w, conv1_b, Shape(5, 5), 20);
     Symbol tanh1 = Activation("tanh1", conv1, ActivationActType::tanh);
-    Symbol pool1 = Pooling("pool1", tanh1, Shape(2, 2),
-      PoolingPoolType::max, false, Shape(2, 2));
+    Symbol pool1 = Pooling("pool1", tanh1, Shape(2, 2), PoolingPoolType::max,
+      false, PoolingPoolingConvention::valid, Shape(2, 2));
 
     Symbol conv2 = Convolution("conv2", pool1, conv2_w, conv2_b,
       Shape(5, 5), 50);
     Symbol tanh2 = Activation("tanh2", conv2, ActivationActType::tanh);
-    Symbol pool2 = Pooling("pool2", tanh2, Shape(2, 2),
-      PoolingPoolType::max, false, Shape(2, 2));
+    Symbol pool2 = Pooling("pool2", tanh2, Shape(2, 2), PoolingPoolType::max,
+      false, PoolingPoolingConvention::valid, Shape(2, 2));
 
     Symbol conv3 = Convolution("conv3", pool2, conv3_w, conv3_b,
       Shape(2, 2), 500);
     Symbol tanh3 = Activation("tanh3", conv3, ActivationActType::tanh);
-    Symbol pool3 = Pooling("pool3", tanh3, Shape(2, 2),
-      PoolingPoolType::max, false, Shape(1, 1));
+    Symbol pool3 = Pooling("pool3", tanh3, Shape(2, 2), PoolingPoolType::max,
+      false, PoolingPoolingConvention::valid, Shape(1, 1));
 
     Symbol flatten = Flatten("flatten", pool3);
     Symbol fc1 = FullyConnected("fc1", flatten, fc1_w, fc1_b, 500);
@@ -112,10 +112,10 @@ class Lenet {
     // args_map["fc1_b"] = 0;
 
     lenet.InferArgsMap(ctx_dev, &args_map, args_map);
-    Optimizer opt("ccsgd", learning_rate, weight_decay);
-    opt.SetParam("momentum", 0.9)
-        .SetParam("rescale_grad", 1.0)
-        .SetParam("clip_gradient", 10);
+    Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+    opt->SetParam("momentum", 0.9)
+       ->SetParam("rescale_grad", 1.0)
+       ->SetParam("clip_gradient", 10);
 
     for (int ITER = 0; ITER < max_epoch; ++ITER) {
       size_t start_index = 0;
@@ -135,7 +135,7 @@ class Lenet {
         Executor *exe = lenet.SimpleBind(ctx_dev, args_map);
         exe->Forward(true);
         exe->Backward();
-        exe->UpdateAll(&opt, learning_rate, weight_decay);
+        exe->UpdateAll(opt, learning_rate, weight_decay);
 
         delete exe;
       }
