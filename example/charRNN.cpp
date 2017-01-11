@@ -99,7 +99,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
 
 	auto label = Symbol::Variable("softmax_label");
 	label = transpose(label);
-	label = Reshape(label, Shape(batch_size * sequence_length));
+	label = Reshape(label, Shape(0));
     auto sm = SoftmaxOutput("softmax", pred, label);
     if (sequence_length == 1) {
     	vector<Symbol> outputs = { sm };
@@ -225,8 +225,8 @@ public:
 	void buildCharIndex(wstring& content) // This version buildCharIndex() Compatiable with python version char_rnn dictionary
 	{
 		int n = 1;
-		charIndices['\0'] = 0;
-		index2chars.push_back(0);
+		charIndices['\0'] = 0; //padding character
+		index2chars.push_back(0); //padding character index
 		for (auto c : content)
 			if (charIndices.find(c) == charIndices.end()) {
 				charIndices[c] = n++;
@@ -334,10 +334,14 @@ void LoadCheckpoint(const string filepath, Executor* exe)
 	for (auto iter : params) {
 		string type = iter.first.substr(0, 4);
 		string name = iter.first.substr(4);
+		NDArray target;
 		if (type == "arg:")
-			iter.second.CopyTo(&exe->arg_dict()[name]);
+			target = exe->arg_dict()[name];
 		else if (type == "aux:")
-			iter.second.CopyTo(&exe->aux_dict()[name]);
+			target = exe->aux_dict()[name];
+		else
+			continue;
+		iter.second.CopyTo(&target);
 	}
 }
 
@@ -354,7 +358,7 @@ void train(const string file, int batch_size, int max_epoch)
 	string prefix = file.substr(0, file.rfind("."));
 	dataIter.saveCharIndices(prefix + ".dictionary");
 
-	input_dim = (int) dataIter.characterSize() + 1;
+	input_dim = (int) dataIter.characterSize();
 	sequence_length_max = dataIter.maxSequenceLength();
 
 	auto RNN = LSTMUnroll(num_lstm_layer, sequence_length_max, input_dim, num_hidden, num_embed, batch_size, dropout);
@@ -375,8 +379,8 @@ void train(const string file, int batch_size, int max_epoch)
 
 	mx_float learning_rate = 0.0002;
 	mx_float weight_decay = 0.000002;
-	Optimizer opt("ccsgd", learning_rate, weight_decay);
-//	opt.SetParam("momentum", 0.9).SetParam("rescale_grad", 1.0 / batch_size).SetParam("clip_gradient", 10);
+	Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+//	opt->SetParam("momentum", 0.9)->SetParam("rescale_grad", 1.0 / batch_size)->SetParam("clip_gradient", 10);
 	char filepath[256];
 
 	for (int epoch = 0; epoch < max_epoch; ++epoch) {
@@ -395,7 +399,7 @@ void train(const string file, int batch_size, int max_epoch)
 
 			exe->Forward(true);
 			exe->Backward();
-			exe->UpdateAll(&opt, learning_rate, weight_decay);
+			exe->UpdateAll(opt, learning_rate, weight_decay);
 			NDArray::WaitAll();
 		}
 		auto toc = chrono::system_clock::now();
