@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <iterator>
 #include "mxnet-cpp/base.h"
 #include "mxnet-cpp/op_map.h"
 #include "mxnet-cpp/operator.h"
