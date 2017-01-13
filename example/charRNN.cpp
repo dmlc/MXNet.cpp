@@ -445,7 +445,7 @@ void predict(wstring* text, int sequence_length, const string param_file,
   wchar_t next;
   vector<mx_float> softmax;
   softmax.resize(input_dim);
-  for (auto c : text) {
+  for (auto c : *text) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&dictionary[c], 1);
     exe->Forward(false);
 
