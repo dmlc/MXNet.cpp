@@ -44,19 +44,15 @@ std::string Optimizer::Serialize() const {
 
 const std::vector<const char*> Optimizer::GetParamKeys_() const {
   std::vector<const char*> keys;
-  std::transform(params_.begin(), params_.end(), std::back_inserter(keys),
-      [](const std::pair<std::string, std::string>& pair){
-        return pair.first.c_str();
-      });
+  for (auto& iter : params_)
+    keys.push_back(iter.first.c_str());
   return keys;
 }
 
 const std::vector<const char*> Optimizer::GetParamValues_() const {
   std::vector<const char*> values;
-  std::transform(params_.begin(), params_.end(), std::back_inserter(values),
-      [](const std::pair<std::string, std::string>& pair){
-        return pair.second.c_str();
-      });
+  for (auto& iter : params_)
+    values.push_back(iter.second.c_str());
   return values;
 }
 
