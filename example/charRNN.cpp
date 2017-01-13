@@ -35,7 +35,7 @@ struct LSTMParam {
 };
 
 //LSTM Cell symbol
-LSTMState LSTM(int num_hidden, Symbol& indata, LSTMState& prev_state, LSTMParam& param, int seqidx, int layeridx, mx_float dropout=0)
+LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state, const LSTMParam& param, int seqidx, int layeridx, mx_float dropout = 0)
 {
 	auto input = dropout > 0? Dropout(indata, dropout) : indata;
 	auto prefix = string("t") + to_string(seqidx) + "_l" + to_string(layeridx);
@@ -55,7 +55,7 @@ LSTMState LSTM(int num_hidden, Symbol& indata, LSTMState& prev_state, LSTMParam&
 }
 
 Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
-        int num_hidden, int num_embed, int batch_size, mx_float dropout=0)
+        int num_hidden, int num_embed, int batch_size, mx_float dropout = 0)
 {
 	auto data = Symbol::Variable("data");
 	auto embed_weight = Symbol::Variable("embed_weight");
@@ -115,7 +115,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
 class Shuffler {
 	vector<int> sequence;
 public:
-	Shuffler(int size) : sequence(size) {
+	explicit Shuffler(int size) : sequence(size) {
 		int* p = sequence.data();
 		for (int i = 0; i < size; i++)
 			*p++ = i;
@@ -222,7 +222,7 @@ public:
 		return L"";
 	}
 
-	void buildCharIndex(wstring& content) // This version buildCharIndex() Compatiable with python version char_rnn dictionary
+	void buildCharIndex(const wstring& content) // This version buildCharIndex() Compatiable with python version char_rnn dictionary
 	{
 		int n = 1;
 		charIndices['\0'] = 0; //padding character
@@ -288,7 +288,7 @@ public:
 		return {map, chars};
 	}
 
-	vector<vector<mx_float>> convertTextToSequences(wstring& content, wchar_t spliter)
+	vector<vector<mx_float>> convertTextToSequences(const wstring& content, wchar_t spliter)
 	{
 		vector<vector<mx_float>> sequences;
 		sequences.push_back(vector<mx_float>());
@@ -371,7 +371,7 @@ void train(const string file, int batch_size, int max_epoch)
 		args_map[key + "h"] = NDArray(Shape(batch_size, num_hidden), device, false);
 	}
 	vector<mx_float> zeros(batch_size * num_hidden, 0);
-	Executor* exe = RNN.SimpleBind(device, args_map);//, {}, {{"data", kNullOp}});
+	Executor* exe = RNN.SimpleBind(device, args_map); // , {}, {{"data", kNullOp}});
 
 	Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
 	for (auto &arg : exe->arg_dict())
@@ -492,4 +492,5 @@ int main(int argc, char** argv)
 	}
 
 	MXNotifyShutdown();
+	return 0;
 }
