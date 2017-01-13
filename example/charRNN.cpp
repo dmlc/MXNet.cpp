@@ -232,8 +232,8 @@ class BucketSentenceIter : public DataIter {
   void buildCharIndex(const wstring& content) {
   // This version buildCharIndex() Compatiable with python version char_rnn dictionary
     int n = 1;
-    charIndices['\0'] = 0; // padding character
-    index2chars.push_back(0); // padding character index
+    charIndices['\0'] = 0;  // padding character
+    index2chars.push_back(0);  // padding character index
     for (auto c : content)
       if (charIndices.find(c) == charIndices.end()) {
         charIndices[c] = n++;
@@ -315,7 +315,8 @@ void OutputPerplexity(NDArray* labels, NDArray* output) {
   for (int n = 0; n < nSamples; n++) {
     int row = n % batchSize, column = n / batchSize, labelOffset = column +
         row * sequenceLength;  // Search based on column storage: labels.T
-    mx_float safe_value = max(1e-10f, a[vocabSize * n + static_cast<int>(charIndices[labelOffset])]);
+    mx_float safe_value = max(1e-10f, a[vocabSize * n +
+                                    static_cast<int>(charIndices[labelOffset])]);
     loss += -log(safe_value);  // Calculate negative log-likelihood
   }
   loss = exp(loss / nSamples);
@@ -325,7 +326,8 @@ void OutputPerplexity(NDArray* labels, NDArray* output) {
 void SaveCheckpoint(const string filepath, Symbol net, Executor* exe) {
   map<string, NDArray> params;
   for (auto iter : exe->arg_dict())
-    if (iter.first.find("_init_") == string::npos && iter.first.rfind("data") != iter.first.length() - 4
+    if (iter.first.find("_init_") == string::npos
+        && iter.first.rfind("data") != iter.first.length() - 4
         && iter.first.rfind("label") != iter.first.length() - 5)
       params.insert({"arg:" + iter.first, iter.second});
   for (auto iter : exe->aux_dict())
@@ -416,13 +418,13 @@ void train(const string file, int batch_size, int max_epoch) {
   }
 }
 
-void predict(wstring& text, int sequence_length, const string param_file,
+void predict(wstring* text, int sequence_length, const string param_file,
     const string dictionary_file) {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
   auto dictionary = get<0>(results);
   auto charIndices = get<1>(results);
-  input_dim = (int) charIndices.size();
+  input_dim = static_cast<int>(charIndices.size());
   auto RNN = LSTMUnroll(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 1, 0);
 
   map<string, NDArray> args_map;
@@ -458,7 +460,7 @@ void predict(wstring& text, int sequence_length, const string param_file,
     index = (mx_float) n;
     next = charIndices[n];
   }
-  text.push_back(next);
+  text->push_back(next);
 
   for (int i = 0; i < sequence_length; i++) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&index, 1);
@@ -474,21 +476,24 @@ void predict(wstring& text, int sequence_length, const string param_file,
     size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
     index = (mx_float) n;
     next = charIndices[n];
-    text.push_back(next);
+    text->push_back(next);
   }
 }
 
 int main(int argc, char** argv) {
   if (argc < 5) {
     cout << "Usage for training: charRNN train {corpus file} {batch size} {max epoch}" << endl;
-    cout << "Usage for prediction: charRNN predict {params file} {dictionary file} {beginning of text}" << endl;
+    cout <<
+    "Usage for prediction: charRNN predict {params file} {dictionary file} {beginning of text}"
+    << endl;
     return 0;
   }
 
   string task = argv[1];
-  if (task == "train")
+  if (task == "train") {
     // this function will generate dictionary file and params file.
     train(argv[2], atoi(argv[3]), atoi(argv[4]));
+  }
   else if (task == "predict") {
     wstring text;  // = L"If there is anyone out there who still doubts ";
     // Considering of extending to Chinese samples in future, use wchar_t instead of char
@@ -497,7 +502,7 @@ int main(int argc, char** argv) {
     /*Python version predicts text default to random selecltions. Here I didn't write the random
     code, always choose the 'best' character. So the text length reduced to 600. Longer size often
   leads to repeated sentances, since training sequence length is only 129 for obama corpus.*/
-    predict(text, 600, argv[2], argv[3]);
+    predict(&text, 600, argv[2], argv[3]);
     wcout << text << endl;
   }
 
