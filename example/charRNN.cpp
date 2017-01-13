@@ -116,7 +116,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
 
 class Shuffler {
   vector<int> sequence;
-public:
+ public:
   explicit Shuffler(int size) : sequence(size) {
     int* p = sequence.data();
     for (int i = 0; i < size; i++)
@@ -142,21 +142,21 @@ class BucketSentenceIter : public DataIter {
   vector<wchar_t> index2chars;
   unordered_map<wchar_t, mx_float> charIndices;
 
-public:
+ public:
   BucketSentenceIter(string filename, int minibatch, Context context) : batch(minibatch),
   current(-1), device(context) {
     auto& content = readContent(filename);
     buildCharIndex(content);
     sequences = convertTextToSequences(content, '\n');
 
-    int N = sequences.size() / batch * batch; // total used samples
+    int N = sequences.size() / batch * batch;  // total used samples
     sequences.resize(N);
     sort(sequences.begin(), sequences.end(), [](const vector<mx_float>& a,
         const vector<mx_float>& b) { return a.size() < b.size(); });
 
     sequence_length = sequences.back().size();
     random = new Shuffler(N);
-    //We still can get random results if call Reset() firstly
+    // We still can get random results if call Reset() firstly
 //    vector<vector<mx_float>>* target = &sequences;
 //    random->shuffle([target](int n, int i) { (*target)[n].swap((*target)[i]); });
     end = N / batch;
@@ -232,8 +232,8 @@ public:
   void buildCharIndex(const wstring& content) {
   // This version buildCharIndex() Compatiable with python version char_rnn dictionary
     int n = 1;
-    charIndices['\0'] = 0; //padding character
-    index2chars.push_back(0); //padding character index
+    charIndices['\0'] = 0; // padding character
+    index2chars.push_back(0); // padding character index
     for (auto c : content)
       if (charIndices.find(c) == charIndices.end()) {
         charIndices[c] = n++;
@@ -305,18 +305,18 @@ public:
   }
 };
 
-void OutputPerplexity(NDArray& labels, NDArray& output) {
+void OutputPerplexity(NDArray* labels, NDArray* output) {
   vector<mx_float> charIndices, a;
-  labels.SyncCopyToCPU(&charIndices, 0L);
-  output.SyncCopyToCPU(&a, 0)/*4128*84*/;
+  labels->SyncCopyToCPU(&charIndices, 0L);
+  output->SyncCopyToCPU(&a, 0)/*4128*84*/;
   mx_float loss = 0;
-  int batchSize = labels.GetShape()[0]/*32*/, sequenceLength = labels.GetShape()[1]/*129*/,
-      nSamples = output.GetShape()[0]/*4128*/, vocabSize = output.GetShape()[1]/*84*/;
+  int batchSize = labels->GetShape()[0]/*32*/, sequenceLength = labels->GetShape()[1]/*129*/,
+      nSamples = output->GetShape()[0]/*4128*/, vocabSize = output->GetShape()[1]/*84*/;
   for (int n = 0; n < nSamples; n++) {
     int row = n % batchSize, column = n / batchSize, labelOffset = column +
-        row * sequenceLength; // Search based on column storage: labels.T
-    mx_float safe_value = max(1e-10f, a[vocabSize * n + int(charIndices[labelOffset])]);
-    loss += -log(safe_value); // Calculate negative log-likelihood
+        row * sequenceLength;  // Search based on column storage: labels.T
+    mx_float safe_value = max(1e-10f, a[vocabSize * n + static_cast<int>(charIndices[labelOffset])]);
+    loss += -log(safe_value);  // Calculate negative log-likelihood
   }
   loss = exp(loss / nSamples);
   cout << "Train-Perplexity=" << loss << endl;
@@ -361,7 +361,7 @@ void train(const string file, int batch_size, int max_epoch) {
   string prefix = file.substr(0, file.rfind("."));
   dataIter.saveCharIndices(prefix + ".dictionary");
 
-  input_dim = (int) dataIter.characterSize();
+  input_dim = static_cast<int>(dataIter.characterSize());
   sequence_length_max = dataIter.maxSequenceLength();
 
   auto RNN = LSTMUnroll(num_lstm_layer, sequence_length_max, input_dim, num_hidden,
@@ -375,7 +375,8 @@ void train(const string file, int batch_size, int max_epoch) {
     args_map[key + "h"] = NDArray(Shape(batch_size, num_hidden), device, false);
   }
   vector<mx_float> zeros(batch_size * num_hidden, 0);
-  Executor* exe = RNN.SimpleBind(device, args_map); // , {}, {{"data", kNullOp}});
+  // RNN.SimpleBind(device, args_map, {}, {{"data", kNullOp}});
+  Executor* exe = RNN.SimpleBind(device, args_map);
 
   Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
   for (auto &arg : exe->arg_dict())
@@ -386,7 +387,6 @@ void train(const string file, int batch_size, int max_epoch) {
   Optimizer* opt = OptimizerRegistry::Find("ccsgd");
 //  opt->SetParam("momentum", 0.9)->SetParam("rescale_grad", 1.0 / batch_size)
 //  ->SetParam("clip_gradient", 10);
-  char filepath[256];
 
   for (int epoch = 0; epoch < max_epoch; ++epoch) {
     dataIter.Reset();
@@ -410,8 +410,8 @@ void train(const string file, int batch_size, int max_epoch) {
     auto toc = chrono::system_clock::now();
     cout << "Epoch[" << epoch << "] Time Cost:" <<
         chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
-    OutputPerplexity(exe->arg_dict()["softmax_label"], exe->outputs[0]);
-    sprintf(filepath, "%s-%04d.params", prefix.c_str(), epoch + 1);
+    OutputPerplexity(&exe->arg_dict()["softmax_label"], &exe->outputs[0]);
+    string filepath = prefix + "-" + to_string(epoch + 1) + "";
     SaveCheckpoint(filepath, RNN, exe);
   }
 }
@@ -490,7 +490,7 @@ int main(int argc, char** argv) {
     // this function will generate dictionary file and params file.
     train(argv[2], atoi(argv[3]), atoi(argv[4]));
   else if (task == "predict") {
-    wstring text; // = L"If there is anyone out there who still doubts ";
+    wstring text;  // = L"If there is anyone out there who still doubts ";
     // Considering of extending to Chinese samples in future, use wchar_t instead of char
     for (char c : string(argv[4]))
       text.push_back((wchar_t) c);
