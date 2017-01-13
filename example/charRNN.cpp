@@ -493,8 +493,7 @@ int main(int argc, char** argv) {
   if (task == "train") {
     // this function will generate dictionary file and params file.
     train(argv[2], atoi(argv[3]), atoi(argv[4]));
-  }
-  else if (task == "predict") {
+  } else if (task == "predict") {
     wstring text;  // = L"If there is anyone out there who still doubts ";
     // Considering of extending to Chinese samples in future, use wchar_t instead of char
     for (char c : string(argv[4]))
