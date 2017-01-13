@@ -34,10 +34,9 @@ struct LSTMParam {
   Symbol h2h_bias;
 };
 
-//LSTM Cell symbol
+// LSTM Cell symbol
 LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state,
-    const LSTMParam& param, int seqidx, int layeridx, mx_float dropout = 0)
-{
+    const LSTMParam& param, int seqidx, int layeridx, mx_float dropout = 0) {
   auto input = dropout > 0? Dropout(indata, dropout) : indata;
   auto prefix = string("t") + to_string(seqidx) + "_l" + to_string(layeridx);
   auto i2h = FullyConnected(prefix + "_i2h", input, param.i2h_weight, param.i2h_bias,
@@ -58,8 +57,7 @@ LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state
 }
 
 Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
-        int num_hidden, int num_embed, int batch_size, mx_float dropout = 0)
-{
+        int num_hidden, int num_embed, int batch_size, mx_float dropout = 0) {
   auto data = Symbol::Variable("data");
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
@@ -221,8 +219,7 @@ public:
     random->shuffle(nullptr);
   }
 
-  wstring readContent(const string file)
-  {
+  wstring readContent(const string file) {
     wifstream ifs(file, ios::binary);
     if (ifs) {
       wostringstream os;
@@ -232,9 +229,8 @@ public:
     return L"";
   }
 
-  void buildCharIndex(const wstring& content)
+  void buildCharIndex(const wstring& content) {
   // This version buildCharIndex() Compatiable with python version char_rnn dictionary
-  {
     int n = 1;
     charIndices['\0'] = 0; //padding character
     index2chars.push_back(0); //padding character index
@@ -262,18 +258,15 @@ public:
 //    }
 //  }
 
-  inline wchar_t character(int i)
-  {
+  inline wchar_t character(int i) {
     return index2chars[i];
   }
 
-  inline mx_float index(wchar_t c)
-  {
+  inline mx_float index(wchar_t c) {
     return charIndices[c];
   }
 
-  void saveCharIndices(const string file)
-  {
+  void saveCharIndices(const string file) {
     wofstream ofs(file, ios::binary);
     if (ofs) {
       ofs.write(index2chars.data() + 1, index2chars.size() - 1);
@@ -282,8 +275,7 @@ public:
   }
 
   static tuple<unordered_map<wchar_t, mx_float>, vector<wchar_t>> loadCharIndices(
-      const string file)
-  {
+      const string file) {
     wifstream ifs(file, ios::binary);
     unordered_map<wchar_t, mx_float> map;
     vector<wchar_t> chars;
@@ -301,8 +293,7 @@ public:
     return {map, chars};
   }
 
-  vector<vector<mx_float>> convertTextToSequences(const wstring& content, wchar_t spliter)
-  {
+  vector<vector<mx_float>> convertTextToSequences(const wstring& content, wchar_t spliter) {
     vector<vector<mx_float>> sequences;
     sequences.push_back(vector<mx_float>());
     for (auto c : content)
@@ -314,8 +305,7 @@ public:
   }
 };
 
-void OutputPerplexity(NDArray& labels, NDArray& output)
-{
+void OutputPerplexity(NDArray& labels, NDArray& output) {
   vector<mx_float> charIndices, a;
   labels.SyncCopyToCPU(&charIndices, 0L);
   output.SyncCopyToCPU(&a, 0)/*4128*84*/;
@@ -324,16 +314,15 @@ void OutputPerplexity(NDArray& labels, NDArray& output)
       nSamples = output.GetShape()[0]/*4128*/, vocabSize = output.GetShape()[1]/*84*/;
   for (int n = 0; n < nSamples; n++) {
     int row = n % batchSize, column = n / batchSize, labelOffset = column +
-        row * sequenceLength; //Search based on column storage: labels.T
+        row * sequenceLength; // Search based on column storage: labels.T
     mx_float safe_value = max(1e-10f, a[vocabSize * n + int(charIndices[labelOffset])]);
-    loss += -log(safe_value); //Calculate Cross Entropy loss function for Softmax output
+    loss += -log(safe_value); // Calculate negative log-likelihood
   }
   loss = exp(loss / nSamples);
   cout << "Train-Perplexity=" << loss << endl;
 }
 
-void SaveCheckpoint(const string filepath, Symbol net, Executor* exe)
-{
+void SaveCheckpoint(const string filepath, Symbol net, Executor* exe) {
   map<string, NDArray> params;
   for (auto iter : exe->arg_dict())
     if (iter.first.find("_init_") == string::npos && iter.first.rfind("data") != iter.first.length() - 4
@@ -344,8 +333,7 @@ void SaveCheckpoint(const string filepath, Symbol net, Executor* exe)
   NDArray::Save(filepath, params);
 }
 
-void LoadCheckpoint(const string filepath, Executor* exe)
-{
+void LoadCheckpoint(const string filepath, Executor* exe) {
   map<std::string, NDArray> params = NDArray::LoadToMap(filepath);
   for (auto iter : params) {
     string type = iter.first.substr(0, 4);
@@ -367,8 +355,7 @@ int num_embed = 256;
 int num_lstm_layer = 3;
 int num_hidden = 512;
 mx_float dropout = 0.2;
-void train(const string file, int batch_size, int max_epoch)
-{
+void train(const string file, int batch_size, int max_epoch) {
   Context device(DeviceType::kGPU, 0);
   BucketSentenceIter dataIter(file, batch_size, device);
   string prefix = file.substr(0, file.rfind("."));
@@ -430,8 +417,7 @@ void train(const string file, int batch_size, int max_epoch)
 }
 
 void predict(wstring& text, int sequence_length, const string param_file,
-    const string dictionary_file)
-{
+    const string dictionary_file) {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
   auto dictionary = get<0>(results);
@@ -492,8 +478,7 @@ void predict(wstring& text, int sequence_length, const string param_file,
   }
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   if (argc < 5) {
     cout << "Usage for training: charRNN train {corpus file} {batch size} {max epoch}" << endl;
     cout << "Usage for prediction: charRNN predict {params file} {dictionary file} {beginning of text}" << endl;
