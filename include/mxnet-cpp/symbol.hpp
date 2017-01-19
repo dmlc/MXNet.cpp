@@ -81,10 +81,10 @@ Symbol Symbol::LoadJSON(const std::string &json_str) {
   CHECK_EQ(MXSymbolCreateFromJSON(json_str.c_str(), &(handle)), 0);
   return Symbol(handle);
 }
-void Symbol::Save(const std::string &file_name) {
+void Symbol::Save(const std::string &file_name) const {
   CHECK_EQ(MXSymbolSaveToFile(GetHandle(), file_name.c_str()), 0);
 }
-std::string Symbol::ToJSON() {
+std::string Symbol::ToJSON() const {
   const char *out_json;
   CHECK_EQ(MXSymbolSaveToJSON(GetHandle(), &out_json), 0);
   return std::string(out_json);

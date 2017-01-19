@@ -104,11 +104,11 @@ class Symbol {
   * \brief save Symbol to a file
   * \param file_name the name of the file
   */
-  void Save(const std::string &file_name);
+  void Save(const std::string &file_name) const;
   /*!
   * \brief save Symbol into a JSON string
   */
-  std::string ToJSON();
+  std::string ToJSON() const;
   /*!
   * \brief save Symbol into a JSON string
   * \retutrn the symbol whose outputs are all the internals.
