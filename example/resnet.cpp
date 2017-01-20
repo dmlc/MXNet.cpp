@@ -186,5 +186,6 @@ int main(int argc, char const *argv[]) {
     LG << "Accuracy: " << acu.Get();
   }
   delete exec;
+  MXNotifyShutdown();
   return 0;
 }
