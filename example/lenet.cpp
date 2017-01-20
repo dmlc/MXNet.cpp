@@ -228,5 +228,6 @@ class Lenet {
 int main(int argc, char const *argv[]) {
   Lenet lenet;
   lenet.Run();
+  MXNotifyShutdown();
   return 0;
 }

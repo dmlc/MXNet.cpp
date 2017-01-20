@@ -156,6 +156,7 @@ void MLP() {
 
 int main(int argc, char** argv) {
   MLP();
+  MXNotifyShutdown();
   return 0;
 }
 
