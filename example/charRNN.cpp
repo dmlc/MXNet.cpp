@@ -498,13 +498,13 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
     auto toc = chrono::system_clock::now();
     cout << "Epoch[" << epoch << "] Time Cost:" <<
         chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
-    OutputPerplexity(exe->arg_dict()["softmax_label"], exe->outputs[0]);
+    OutputPerplexity(&exe->arg_dict()["softmax_label"], &exe->outputs[0]);
     string filepath = prefix + "-" + to_string(epoch + 1) + ".params";
     SaveCheckpoint(filepath, RNN, exe);
   }
 }
 
-void predict(wstring* text, int sequence_length, const string param_file,
+void predict(wstring* ptext, int sequence_length, const string param_file,
     const string dictionary_file) {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
@@ -531,7 +531,7 @@ void predict(wstring* text, int sequence_length, const string param_file,
   wchar_t next;
   vector<mx_float> softmax;
   softmax.resize(input_dim);
-  for (auto c : *text) {
+  for (auto c : *ptext) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&dictionary[c], 1);
     exe->Forward(false);
 
@@ -546,7 +546,7 @@ void predict(wstring* text, int sequence_length, const string param_file,
     index = (mx_float) n;
     next = charIndices[n];
   }
-  text.push_back(next);
+  ptext->push_back(next);
 
   for (int i = 0; i < sequence_length; i++) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&index, 1);
@@ -562,11 +562,11 @@ void predict(wstring* text, int sequence_length, const string param_file,
     size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
     index = (mx_float) n;
     next = charIndices[n];
-    text.push_back(next);
+    ptext->push_back(next);
   }
 }
 
-void predictWithBuiltInRNNOp(wstring& text, int sequence_length, const string param_file, const string dictionary_file)
+void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string param_file, const string dictionary_file)
 {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
@@ -590,7 +590,7 @@ void predictWithBuiltInRNNOp(wstring& text, int sequence_length, const string pa
   wchar_t next;
   vector<mx_float> softmax;
   softmax.resize(input_dim);
-  for (auto c : text) {
+  for (auto c : *ptext) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&dictionary[c], 1);
     exe->Forward(false);
 
@@ -610,7 +610,7 @@ void predictWithBuiltInRNNOp(wstring& text, int sequence_length, const string pa
     index = (mx_float) n;
     next = charIndices[n];
   }
-  text->push_back(next);
+  ptext->push_back(next);
 
   for (int i = 0; i < sequence_length; i++) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&index, 1);
@@ -626,7 +626,7 @@ void predictWithBuiltInRNNOp(wstring& text, int sequence_length, const string pa
     size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
     index = (mx_float) n;
     next = charIndices[n];
-    text->push_back(next);
+    ptext->push_back(next);
   }
 }
 
@@ -651,9 +651,9 @@ int main(int argc, char** argv) {
     code, always choose the 'best' character. So the text length reduced to 600. Longer size often
   leads to repeated sentances, since training sequence length is only 129 for obama corpus.*/
     if (task == "predict")
-      predict(text, 600, argv[2], argv[3]);
+      predict(&text, 600, argv[2], argv[3]);
     else
-      predictWithBuiltInRNNOp(text, 600, argv[2], argv[3]); // ditto
+      predictWithBuiltInRNNOp(&text, 600, argv[2], argv[3]); // ditto
     wcout << text << endl;
   }
 
