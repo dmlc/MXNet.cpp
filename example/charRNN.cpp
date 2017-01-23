@@ -129,7 +129,7 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto label_tm = SwapAxis(label, 0 ,1);
   auto rnn_h_init = SwapAxis(Symbol::Variable("LSTM_init_h"), 0, 1);
   auto rnn_c_init = SwapAxis(Symbol::Variable("LSTM_init_c"), 0, 1);
-  auto rnn_params = Symbol::Variable("LSTM_bias");
+  auto rnn_params = Symbol::Variable("LSTM_paramters");
   auto rnn = RNN(embed_tm, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer, 
   RNNMode::lstm, false, dropout, (sequence_length == 1));
 
@@ -449,6 +449,17 @@ void train(const string file, int batch_size, int max_epoch) {
   }
 }
 
+class RNNXavier : public Xavier {
+ public:
+  RNNXavier(RandType rand_type = gaussian, FactorType factor_type = avg,
+    float magnitude = 3) : Xavier(rand_type, factor_type, magnitude) {
+  }
+ protected:
+  virtual void InitDefault(NDArray* arr) {
+	  Xavier::InitWeight(arr);
+  }
+};
+
 void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
 {
   Context device(DeviceType::kGPU, 0);
@@ -469,7 +480,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
   vector<mx_float> zeros(batch_size * num_lstm_layer * num_hidden, 0);
   Executor* exe = RNN.SimpleBind(device, args_map);
 
-  Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
+  RNNXavier xavier = RNNXavier(Xavier::gaussian, Xavier::in, 2.34);
   for (auto &arg : exe->arg_dict())
     xavier(arg.first, &arg.second);
 
