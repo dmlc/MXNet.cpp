@@ -328,7 +328,7 @@ inline std::ostream &operator<<(std::ostream &os, const Shape &shape) {
   os << '(';
   for (index_t i = 0; i < shape.ndim(); ++i) {
     if (i != 0) os << ',';
-    os << shape[i];
+    os << static_cast<int>(shape[i]);  // Supports negative Shape 'special codes' for inferring
   }
   // python style tuple
   if (shape.ndim() == 1) os << ',';
