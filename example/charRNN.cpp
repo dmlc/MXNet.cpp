@@ -116,6 +116,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
   return sm;
 }
 
+// Currently mxnet GPU version RNN operator is implemented via *fast* NVIDIA cuDNN.
 Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_dim,
  int num_hidden, int num_embed, mx_float dropout = 0)
 {
@@ -124,25 +125,28 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
 
   auto label = Symbol::Variable("softmax_label");
+  auto isPredict = sequence_length == 1;
 
   auto embed_tm = SwapAxis(embed, 0, 1);
   auto label_tm = SwapAxis(label, 0 ,1);
   auto rnn_h_init = SwapAxis(Symbol::Variable("LSTM_init_h"), 0, 1);
   auto rnn_c_init = SwapAxis(Symbol::Variable("LSTM_init_c"), 0, 1);
-  auto rnn_params = Symbol::Variable("LSTM_paramters");
+  auto rnn_params = Symbol::Variable("LSTM_paramters");  // See explanations near RNNXavier class
   auto rnn = RNN(embed_tm, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer, 
-  RNNMode::lstm, false, dropout, (sequence_length == 1));
+  RNNMode::lstm, false, dropout, isPredict);
 
-    auto hidden = Reshape(rnn, Shape(), false, Shape(-1, num_hidden));
-    auto label_cl = Reshape(label_tm, Shape(), false, Shape(-1));
+  auto hidden = Reshape(rnn[0], Shape(), false, Shape(-1, num_hidden));
+  auto label_cl = Reshape(label_tm, Shape(), false, Shape(-1));
 
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
   auto pred = FullyConnected("pred", hidden, cls_weight, cls_bias, input_dim);
   auto sm = SoftmaxOutput("softmax", pred, label_cl);
 
-//    data_names = ['data', 'LSTM_init_h', 'LSTM_init_c']
-//    label_names = ['softmax_label']
+  if (isPredict)
+    return Symbol::Group({ sm, SwapAxis(rnn[1/*RNNOpOutputs::kStateOut=1*/], 0, 1),
+	  SwapAxis(rnn[2/*RNNOpOutputs::kStateCellOut=2*/], 0, 1) });
+  else
     return sm;
 }
 
@@ -449,11 +453,17 @@ void train(const string file, int batch_size, int max_epoch) {
   }
 }
 
+/*The original example, rnn_cell_demo.py, uses default Xavier as initalizer, which relies on
+ * variable name, cannot initialize LSTM_parameters. Thus it was renamed to LSTM_bias,
+ * which can be initialized as zero. But it cannot converge after 100 epochs in this corpus
+ * example. Using RNNXavier, after 15 oscillating epochs,  it rapidly converges like old
+ * LSTMUnroll version. */
 class RNNXavier : public Xavier {
  public:
   RNNXavier(RandType rand_type = gaussian, FactorType factor_type = avg,
     float magnitude = 3) : Xavier(rand_type, factor_type, magnitude) {
   }
+  virtual ~RNNXavier() {}
  protected:
   virtual void InitDefault(NDArray* arr) {
     Xavier::InitWeight(arr);
@@ -577,7 +587,8 @@ void predict(wstring* ptext, int sequence_length, const string param_file,
   }
 }
 
-void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string param_file, const string dictionary_file)
+void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string param_file,
+  const string dictionary_file)
 {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
@@ -587,8 +598,8 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
   auto RNN = LSTMWithBuiltInRNNOp(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 0);
 
   map<string, NDArray> args_map;
-  args_map["data"] = NDArray(Shape(1), device, false);
-  args_map["softmax_label"] = NDArray(Shape(1), device, false);
+  args_map["data"] = NDArray(Shape(1, 1), device, false);
+  args_map["softmax_label"] = NDArray(Shape(1, 1), device, false);
   vector<mx_float> zeros(1 * num_lstm_layer * num_hidden, 0);
   args_map["LSTM_init_c"] = NDArray(Shape(1, num_lstm_layer, num_hidden), device, false);
   args_map["LSTM_init_h"] = NDArray(Shape(1, num_lstm_layer, num_hidden), device, false);
@@ -605,18 +616,10 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
     exe->arg_dict()["data"].SyncCopyFromCPU(&dictionary[c], 1);
     exe->Forward(false);
 
-//    exe->arg_dict()["LSTM_init_c"].SyncCopyFromCPU(zeros);
-//    exe->arg_dict()["LSTM_init_h"].SyncCopyFromCPU(zeros);
-//    exe->outputs[l * 2 + 1].CopyTo(&args_map[key + "c"]);
-//    exe->outputs[l * 2 + 2].CopyTo(&args_map[key + "h"]);
-//
-//    for (int l = 0; l < num_lstm_layer; l++) {
-//      string key = "l" + to_string(l) + "_init_";
-//      exe->outputs[l * 2 + 1].CopyTo(&args_map[key + "c"]);
-//      exe->outputs[l * 2 + 2].CopyTo(&args_map[key + "h"]);
-//    }
-
     exe->outputs[0].SyncCopyToCPU(softmax.data(), input_dim);
+    exe->outputs[1].CopyTo(&args_map["LSTM_init_h"]);
+    exe->outputs[2].CopyTo(&args_map["LSTM_init_c"]);
+
     size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
     index = (mx_float) n;
     next = charIndices[n];
@@ -628,11 +631,8 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
     exe->Forward(false);
 
     exe->outputs[0].SyncCopyToCPU(softmax.data(), input_dim);
-    for (int l = 0; l < num_lstm_layer; l++) {
-      string key = "l" + to_string(l) + "_init_";
-      exe->outputs[l * 2 + 1].CopyTo(&args_map[key + "c"]);
-      exe->outputs[l * 2 + 2].CopyTo(&args_map[key + "h"]);
-    }
+    exe->outputs[1].CopyTo(&args_map["LSTM_init_h"]);
+    exe->outputs[2].CopyTo(&args_map["LSTM_init_c"]);
 
     size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
     index = (mx_float) n;
