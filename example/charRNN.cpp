@@ -36,6 +36,8 @@ struct LSTMParam {
   Symbol h2h_bias;
 };
 
+bool TIME_MAJOR = true;
+
 // LSTM Cell symbol
 LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state,
     const LSTMParam& param, int seqidx, int layeridx, mx_float dropout = 0) {
@@ -60,10 +62,13 @@ LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state
 
 Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
         int num_hidden, int num_embed, int batch_size, mx_float dropout = 0) {
+  auto isPredict = sequence_length == 1;
   auto data = Symbol::Variable("data");
+  if (TIME_MAJOR && !isPredict)
+	  data = transpose(data);
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
-  auto wordvec = SliceChannel(embed, sequence_length, 1, true);
+  auto wordvec = isPredict? embed : SliceChannel(embed, sequence_length, TIME_MAJOR? 0 : 1, true);
 
   vector<LSTMState> last_states;
   vector<LSTMParam> param_cells;
@@ -91,21 +96,22 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
       hidden = next_state.h;
       last_states[layer] = next_state;
     }
-        if (dropout > 0)
-            hidden = Dropout(hidden, dropout);
-        hidden_all.push_back(hidden);
+    if (dropout > 0)
+      hidden = Dropout(hidden, dropout);
+    hidden_all.push_back(hidden);
   }
 
-  auto hidden_concat = Concat(hidden_all, hidden_all.size(), 0);
+  auto hidden_concat = isPredict? hidden_all[0] : Concat(hidden_all, hidden_all.size(), 0);
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
   auto pred = FullyConnected("pred", hidden_concat, cls_weight, cls_bias, input_dim);
 
   auto label = Symbol::Variable("softmax_label");
-  label = transpose(label);
+  if (!TIME_MAJOR)
+	  label = transpose(label);
   label = Reshape(label, Shape(), false, Shape(-1));  // -1: infer from graph
   auto sm = SoftmaxOutput("softmax", pred, label);
-  if (sequence_length == 1) {
+  if (isPredict) {
     vector<Symbol> outputs = { sm };
     for (auto& state : last_states) {
       outputs.push_back(state.C);
@@ -120,23 +126,28 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
 Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_dim,
  int num_hidden, int num_embed, mx_float dropout = 0)
 {
+  auto isPredict = sequence_length == 1;
   auto data = Symbol::Variable("data");
+  if (TIME_MAJOR && !isPredict)
+	  data = transpose(data);
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
 
   auto label = Symbol::Variable("softmax_label");
-  auto isPredict = sequence_length == 1;
+  if (!TIME_MAJOR) {
+	  embed = SwapAxis(embed, 0, 1);  // Change to time-major
+	  label = transpose(label);
+  }
 
-  auto embed_tm = SwapAxis(embed, 0, 1);
-  auto label_tm = SwapAxis(label, 0 ,1);
-  auto rnn_h_init = SwapAxis(Symbol::Variable("LSTM_init_h"), 0, 1);
-  auto rnn_c_init = SwapAxis(Symbol::Variable("LSTM_init_c"), 0, 1);
+  // We need not do the SwapAxis op as python version does. Direct and better performance in C++!
+  auto rnn_h_init = Symbol::Variable("LSTM_init_h");
+  auto rnn_c_init = Symbol::Variable("LSTM_init_c");
   auto rnn_params = Symbol::Variable("LSTM_paramters");  // See explanations near RNNXavier class
-  auto rnn = RNN(embed_tm, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer, 
-  RNNMode::lstm, false, dropout, isPredict);
+  auto rnn = RNN(embed, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer,
+		  RNNMode::lstm, false, dropout, isPredict);
 
   auto hidden = Reshape(rnn[0], Shape(), false, Shape(-1, num_hidden));
-  auto label_cl = Reshape(label_tm, Shape(), false, Shape(-1));
+  auto label_cl = Reshape(label, Shape(), false, Shape(-1));
 
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
@@ -144,8 +155,8 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto sm = SoftmaxOutput("softmax", pred, label_cl);
 
   if (isPredict)
-    return Symbol::Group({ sm, SwapAxis(rnn[1/*RNNOpOutputs::kStateOut=1*/], 0, 1),
-	  SwapAxis(rnn[2/*RNNOpOutputs::kStateCellOut=2*/], 0, 1) });
+    return Symbol::Group({ sm, rnn[1/*RNNOpOutputs::kStateOut=1*/],
+	  rnn[2/*RNNOpOutputs::kStateCellOut=2*/] });
   else
     return sm;
 }
@@ -484,8 +495,8 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
    num_embed, dropout);
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
-  args_map["LSTM_init_c"] = NDArray(Shape(batch_size, num_lstm_layer, num_hidden), device, false);
-  args_map["LSTM_init_h"] = NDArray(Shape(batch_size, num_lstm_layer, num_hidden), device, false);
+  args_map["LSTM_init_c"] = NDArray(Shape(num_lstm_layer, batch_size, num_hidden), device, false);
+  args_map["LSTM_init_h"] = NDArray(Shape(num_lstm_layer, batch_size, num_hidden), device, false);
   args_map["softmax_label"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
   vector<mx_float> zeros(batch_size * num_lstm_layer * num_hidden, 0);
   Executor* exe = RNN.SimpleBind(device, args_map);
@@ -643,28 +654,40 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
 
 int main(int argc, char** argv) {
   if (argc < 5) {
-    cout << "Usage for training: charRNN train[BuiltIn] {corpus file} {batch size} {max epoch}" << endl;
-    cout << "Usage for prediction: charRNN predict[BuiltIn] {params file} {dictionary file} {beginning of text}" << endl;
-    cout << "Note: The {params file} of train and trainBuiltIn are not compatible with each other." << endl;
+    cout <<
+    "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file} {batch size} {max epoch}"
+    << endl;
+    cout <<
+    "Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file} {dictionary file} {beginning of text}"
+    << endl;
+    cout <<
+    "Note: The {params file} of train/trainBuiltIn//trainTimeMajor/trainBuiltInTimeMajor are not compatible with each other."
+    << endl;
     return 0;
   }
 
   string task = argv[1];
-  if (task == "train")
-    train(argv[2], atoi(argv[3]), atoi(argv[4])); // this function will generate dictionary file and params file.
-  else if (task == "trainBuiltIn")
-    trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4])); // ditto
+  bool builtIn = task.find("BuiltIn") > 0;
+  TIME_MAJOR = task.find("TimeMajor") > 0;
+  if (task.find("train") == 0) {
+    // this function will generate dictionary file and params file.
+    if (builtIn)
+      trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]));
+    else
+      train(argv[2], atoi(argv[3]), atoi(argv[4]));  // ditto
+  }
   else if (task.find("predict") == 0) {
     wstring text;// = L"If there is anyone out there who still doubts ";
-    for (char c : string(argv[4])) // Considering of extending to Chinese samples in future, use wchar_t instead of char
+    // Considering of extending to Chinese samples in future, use wchar_t instead of char
+    for (char c : string(argv[4]))
       text.push_back((wchar_t) c);
     /*Python version predicts text default to random selecltions. Here I didn't write the random
     code, always choose the 'best' character. So the text length reduced to 600. Longer size often
-  leads to repeated sentances, since training sequence length is only 129 for obama corpus.*/
-    if (task == "predict")
-      predict(&text, 600, argv[2], argv[3]);
+    leads to repeated sentances, since training sequence length is only 129 for obama corpus.*/
+    if (builtIn)
+      predictWithBuiltInRNNOp(&text, 600, argv[2], argv[3]);
     else
-      predictWithBuiltInRNNOp(&text, 600, argv[2], argv[3]); // ditto
+      predict(&text, 600, argv[2], argv[3]);
     wcout << text << endl;
   }
 
