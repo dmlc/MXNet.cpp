@@ -456,7 +456,7 @@ class RNNXavier : public Xavier {
   }
  protected:
   virtual void InitDefault(NDArray* arr) {
-	  Xavier::InitWeight(arr);
+    Xavier::InitWeight(arr);
   }
 };
 
