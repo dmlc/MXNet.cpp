@@ -4,8 +4,10 @@
  * The code implements C++ version charRNN for mxnet\example\rnn\char-rnn.ipynb with MXNet.cpp API.
  * The generated params file is compatiable with python version.
  * train() and predict() has been verified with original data samples.
- * 2017/1/23: add faster version charRNN based on built-in cuDNN RNN operator.
- * Support time major computation graph, although no substantial performance difference.
+ * 2017/1/23:
+ * Add faster version charRNN based on built-in cuDNN RNN operator, 10 times faster.
+ * Add time major computation graph, although no substantial performance difference.
+ * Support continuing training from last params file.
  * Rename params file epoch number starts from zero.
  */
 
