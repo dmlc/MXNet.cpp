@@ -62,13 +62,13 @@ LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state
 
 Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
         int num_hidden, int num_embed, mx_float dropout = 0) {
-  auto isPredict = sequence_length == 1;
+  auto isTrain = sequence_length > 1;
   auto data = Symbol::Variable("data");
-  if (TIME_MAJOR && !isPredict)
+  if (TIME_MAJOR && isTrain)
 	  data = transpose(data);
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
-  auto wordvec = isPredict? embed : SliceChannel(embed, sequence_length, TIME_MAJOR? 0 : 1, true);
+  auto wordvec = isTrain? SliceChannel(embed, sequence_length, TIME_MAJOR? 0 : 1, true) : embed;
 
   vector<LSTMState> last_states;
   vector<LSTMParam> param_cells;
@@ -101,42 +101,43 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
     hidden_all.push_back(hidden);
   }
 
-  auto hidden_concat = isPredict? hidden_all[0] : Concat(hidden_all, hidden_all.size(), 0);
+  auto hidden_concat = isTrain? Concat(hidden_all, hidden_all.size(), 0) : hidden_all[0];
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
   auto pred = FullyConnected("pred", hidden_concat, cls_weight, cls_bias, input_dim);
 
   auto label = Symbol::Variable("softmax_label");
-  if (!TIME_MAJOR)
+  if (!TIME_MAJOR && isTrain)
 	  label = transpose(label);
   label = Reshape(label, Shape(), false, Shape(-1));  // -1: infer from graph
   auto sm = SoftmaxOutput("softmax", pred, label);
-  if (isPredict) {
-    vector<Symbol> outputs = { sm };
-    for (auto& state : last_states) {
-      outputs.push_back(state.C);
-      outputs.push_back(state.h);
-    }
-    return Symbol::Group(outputs);
+  if (isTrain)
+    return sm;
+
+  vector<Symbol> outputs = { sm };
+  for (auto& state : last_states) {
+    outputs.push_back(state.C);
+    outputs.push_back(state.h);
   }
-  return sm;
+  return Symbol::Group(outputs);
 }
 
 // Currently mxnet GPU version RNN operator is implemented via *fast* NVIDIA cuDNN.
 Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_dim,
  int num_hidden, int num_embed, mx_float dropout = 0)
 {
-  auto isPredict = sequence_length == 1;
+  auto isTrain = sequence_length > 1;
   auto data = Symbol::Variable("data");
-  if (TIME_MAJOR && !isPredict)
+  if (TIME_MAJOR && isTrain)
 	  data = transpose(data);
+
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
-
   auto label = Symbol::Variable("softmax_label");
-  if (!TIME_MAJOR) {
+  label = transpose(label);
+  if (!TIME_MAJOR && isTrain) {
 	  embed = SwapAxis(embed, 0, 1);  // Change to time-major
-	  label = transpose(label);
+      label = Reshape(label, Shape(), false, Shape(-1));
   }
 
   // We need not do the SwapAxis op as python version does. Direct and better performance in C++!
@@ -144,21 +145,21 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto rnn_c_init = Symbol::Variable("LSTM_init_c");
   auto rnn_params = Symbol::Variable("LSTM_parameters");  // See explanations near RNNXavier class
   auto rnn = RNN(embed, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer,
-		  RNNMode::lstm, false, dropout, isPredict);
-
+		  RNNMode::lstm, false, dropout, !isTrain);
   auto hidden = Reshape(rnn[0], Shape(), false, Shape(-1, num_hidden));
-  auto label_cl = Reshape(label, Shape(), false, Shape(-1));
 
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
   auto pred = FullyConnected("pred", hidden, cls_weight, cls_bias, input_dim);
-  auto sm = SoftmaxOutput("softmax", pred, label_cl);
+  if (TIME_MAJOR && isTrain)
+	  pred = Reshape(pred, Shape(), false, Shape(sequence_length, -1, input_dim));
 
-  if (isPredict)
+  auto sm = SoftmaxOutput("softmax", pred, label, 1, -1, false, false, TIME_MAJOR);
+  if (isTrain)
+    return sm;
+  else
     return Symbol::Group({ sm, rnn[1/*RNNOpOutputs::kStateOut=1*/],
 	  rnn[2/*RNNOpOutputs::kStateCellOut=2*/] });
-  else
-    return sm;
 }
 
 class Shuffler {
