@@ -667,8 +667,8 @@ int main(int argc, char** argv) {
   }
 
   string task = argv[1];
-  bool builtIn = task.find("BuiltIn") > 0;
-  TIME_MAJOR = task.find("TimeMajor") > 0;
+  bool builtIn = task.find("BuiltIn") != string::npos;
+  TIME_MAJOR = task.find("TimeMajor") != string::npos;
   cout << "use BuiltIn cuDNN RNN: " << builtIn << " use data as TimeMajor: " << TIME_MAJOR << endl;
   if (task.find("train") == 0) {
     // this function will generate dictionary file and params file.
