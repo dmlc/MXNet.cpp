@@ -61,7 +61,7 @@ LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state
 }
 
 Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
-        int num_hidden, int num_embed, int batch_size, mx_float dropout = 0) {
+        int num_hidden, int num_embed, mx_float dropout = 0) {
   auto isPredict = sequence_length == 1;
   auto data = Symbol::Variable("data");
   if (TIME_MAJOR && !isPredict)
@@ -413,7 +413,7 @@ void train(const string file, int batch_size, int max_epoch) {
   sequence_length_max = dataIter.maxSequenceLength();
 
   auto RNN = LSTMUnroll(num_lstm_layer, sequence_length_max, input_dim, num_hidden,
-      num_embed, batch_size, dropout);
+      num_embed, dropout);
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
   args_map["softmax_label"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
@@ -544,7 +544,7 @@ void predict(wstring* ptext, int sequence_length, const string param_file,
   auto dictionary = get<0>(results);
   auto charIndices = get<1>(results);
   input_dim = static_cast<int>(charIndices.size());
-  auto RNN = LSTMUnroll(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 1, 0);
+  auto RNN = LSTMUnroll(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 0);
 
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(1, 1), device, false);
@@ -671,9 +671,12 @@ int main(int argc, char** argv) {
   string task = argv[1];
   bool builtIn = task.find("BuiltIn") != string::npos;
   TIME_MAJOR = task.find("TimeMajor") != string::npos;
-  cout << "use BuiltIn cuDNN RNN: " << builtIn << " use data as TimeMajor: " << TIME_MAJOR << endl;
+  cout << "use BuiltIn cuDNN RNN: " << builtIn << endl
+         << "use data as TimeMajor: " << TIME_MAJOR << endl;
   if (task.find("train") == 0) {
-    // this function will generate dictionary file and params file.
+    cout << "train batch size: " << argv[3] << endl
+           << "train max epoch: " << argv[4] << endl;
+	// this function will generate dictionary file and params file.
     if (builtIn)
       trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]));
     else
