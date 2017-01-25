@@ -127,8 +127,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
 
 // Currently mxnet GPU version RNN operator is implemented via *fast* NVIDIA cuDNN.
 Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_dim,
- int num_hidden, int num_embed, mx_float dropout = 0)
-{
+ int num_hidden, int num_embed, mx_float dropout = 0) {
   auto isTrain = sequence_length > 1;
   auto data = Symbol::Variable("data");
   if (TIME_MAJOR && isTrain)
@@ -438,8 +437,7 @@ void train(const string file, int batch_size, int max_epoch, int start_epoch) {
     Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
     for (auto &arg : exe->arg_dict())
       xavier(arg.first, &arg.second);
-  }
-  else {
+  } else {
     LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
   }
   start_epoch++;
@@ -495,14 +493,13 @@ class RNNXavier : public Xavier {
   }
 };
 
-void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int start_epoch)
-{
+void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int start_epoch) {
   Context device(DeviceType::kGPU, 0);
   BucketSentenceIter dataIter(file, batch_size, device);
   string prefix = file.substr(0, file.rfind("."));
   dataIter.saveCharIndices(prefix + ".dictionary");
 
-  input_dim = (int) dataIter.characterSize();
+  input_dim = static_cast<int>(dataIter.characterSize());
   sequence_length_max = dataIter.maxSequenceLength();
 
   auto RNN = LSTMWithBuiltInRNNOp(num_lstm_layer, sequence_length_max, input_dim, num_hidden,
@@ -520,8 +517,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int
     RNNXavier xavier = RNNXavier(Xavier::gaussian, Xavier::in, 2.34);
     for (auto &arg : exe->arg_dict())
       xavier(arg.first, &arg.second);
-  }
-  else {
+  } else {
     LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
   }
   start_epoch++;
@@ -620,13 +616,12 @@ void predict(wstring* ptext, int sequence_length, const string param_file,
 }
 
 void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string param_file,
-  const string dictionary_file)
-{
+  const string dictionary_file) {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
   auto dictionary = get<0>(results);
   auto charIndices = get<1>(results);
-  input_dim = (int) charIndices.size();
+  input_dim = static_cast<int>(charIndices.size());
   auto RNN = LSTMWithBuiltInRNNOp(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 0);
 
   map<string, NDArray> args_map;
@@ -676,15 +671,12 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
 
 int main(int argc, char** argv) {
   if (argc < 5) {
-    cout <<
-    "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file} {batch size} {max epoch} [{starting epoch}]"
-    << endl;
-    cout <<
-    "Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file} {dictionary file} {beginning of text}"
-    << endl;
-    cout <<
-    "Note: The {params file} of train/trainBuiltIn/trainTimeMajor/trainBuiltInTimeMajor are not compatible with each other."
-    << endl;
+    cout << "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file}"
+    		" {batch size} {max epoch} [{starting epoch}]" << endl;
+    cout <<"Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file}"
+    		" {dictionary file} {beginning of text}" << endl;
+    cout <<"Note: The {params file} of train/trainBuiltIn/trainTimeMajor/trainBuiltInTimeMajor"
+    		" are not compatible with each other." << endl;
     return 0;
   }
 
@@ -702,9 +694,8 @@ int main(int argc, char** argv) {
       trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);
     else
       train(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);  // ditto
-  }
-  else if (task.find("predict") == 0) {
-    wstring text;// = L"If there is anyone out there who still doubts ";
+  } else if (task.find("predict") == 0) {
+    wstring text;  // = L"If there is anyone out there who still doubts ";
     // Considering of extending to Chinese samples in future, use wchar_t instead of char
     for (char c : string(argv[4]))
       text.push_back((wchar_t) c);
