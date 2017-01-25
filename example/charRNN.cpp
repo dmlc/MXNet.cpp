@@ -689,11 +689,11 @@ int main(int argc, char** argv) {
   string task = argv[1];
   bool builtIn = task.find("BuiltIn") != string::npos;
   TIME_MAJOR = task.find("TimeMajor") != string::npos;
-  cout << "use BuiltIn cuDNN RNN:      " << builtIn << endl
-         << "use data as TimeMajor:       " << TIME_MAJOR << endl;
+  cout << "use BuiltIn cuDNN RNN: " << builtIn << endl
+         << "use data as TimeMajor: " << TIME_MAJOR << endl;
   if (task.find("train") == 0) {
-    cout << "train batch size: " << argv[3] << endl
-           << "train max epoch: " << argv[4] << endl;
+    cout << "train batch size:      " << argv[3] << endl
+           << "train max epoch:       " << argv[4] << endl;
     int start_epoch = argc > 5? atoi(argv[5]) : -1;
 	// this function will generate dictionary file and params file.
     if (builtIn)
