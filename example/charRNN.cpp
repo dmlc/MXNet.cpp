@@ -672,11 +672,11 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
 int main(int argc, char** argv) {
   if (argc < 5) {
     cout << "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file}"
-    		" {batch size} {max epoch} [{starting epoch}]" << endl;
+            " {batch size} {max epoch} [{starting epoch}]" << endl;
     cout <<"Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file}"
-    		" {dictionary file} {beginning of text}" << endl;
+            " {dictionary file} {beginning of text}" << endl;
     cout <<"Note: The {params file} of train/trainBuiltIn/trainTimeMajor/trainBuiltInTimeMajor"
-    		" are not compatible with each other." << endl;
+            " are not compatible with each other." << endl;
     return 0;
   }
 
