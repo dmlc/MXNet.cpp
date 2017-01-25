@@ -142,7 +142,7 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   // We need not do the SwapAxis op as python version does. Direct and better performance in C++!
   auto rnn_h_init = Symbol::Variable("LSTM_init_h");
   auto rnn_c_init = Symbol::Variable("LSTM_init_c");
-  auto rnn_params = Symbol::Variable("LSTM_paramters");  // See explanations near RNNXavier class
+  auto rnn_params = Symbol::Variable("LSTM_parameters");  // See explanations near RNNXavier class
   auto rnn = RNN(embed, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer,
 		  RNNMode::lstm, false, dropout, isPredict);
 
