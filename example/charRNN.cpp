@@ -69,7 +69,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
   auto isTrain = sequence_length > 1;
   auto data = Symbol::Variable("data");
   if (TIME_MAJOR && isTrain)
-	  data = transpose(data);
+    data = transpose(data);
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
   auto wordvec = isTrain? SliceChannel(embed, sequence_length, TIME_MAJOR? 0 : 1, true) : embed;
@@ -132,7 +132,7 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto isTrain = sequence_length > 1;
   auto data = Symbol::Variable("data");
   if (TIME_MAJOR && isTrain)
-	  data = transpose(data);
+    data = transpose(data);
 
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
@@ -140,14 +140,14 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   label = transpose(label);
   label = Reshape(label, Shape(), false, Shape(-1));  // FullyConnected requires one dimension
   if (!TIME_MAJOR && isTrain)
-	  embed = SwapAxis(embed, 0, 1);  // Change to time-major as cuDNN requires
+    embed = SwapAxis(embed, 0, 1);  // Change to time-major as cuDNN requires
 
   // We need not do the SwapAxis op as python version does. Direct and better performance in C++!
   auto rnn_h_init = Symbol::Variable("LSTM_init_h");
   auto rnn_c_init = Symbol::Variable("LSTM_init_c");
   auto rnn_params = Symbol::Variable("LSTM_parameters");  // See explanations near RNNXavier class
   auto rnn = RNN(embed, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer,
-		  RNNMode::lstm, false, dropout, !isTrain);
+      RNNMode::lstm, false, dropout, !isTrain);
   auto hidden = Reshape(rnn[0], Shape(), false, Shape(-1, num_hidden));
 
   auto cls_weight = Symbol::Variable("cls_weight");
@@ -166,7 +166,7 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
     return sm;
   else
     return Symbol::Group({ sm, rnn[1/*RNNOpOutputs::kStateOut=1*/],
-	  rnn[2/*RNNOpOutputs::kStateCellOut=2*/] });
+    rnn[2/*RNNOpOutputs::kStateCellOut=2*/] });
 }
 
 class Shuffler {
@@ -440,7 +440,7 @@ void train(const string file, int batch_size, int max_epoch, int start_epoch) {
       xavier(arg.first, &arg.second);
   }
   else {
-	  LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
+    LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
   }
   start_epoch++;
 
@@ -506,7 +506,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int
   sequence_length_max = dataIter.maxSequenceLength();
 
   auto RNN = LSTMWithBuiltInRNNOp(num_lstm_layer, sequence_length_max, input_dim, num_hidden,
-   num_embed, dropout);
+      num_embed, dropout);
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
   // Avoiding SwapAxis, batch_size is of second dimension.
@@ -522,7 +522,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int
       xavier(arg.first, &arg.second);
   }
   else {
-	  LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
+    LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
   }
   start_epoch++;
 
@@ -697,7 +697,7 @@ int main(int argc, char** argv) {
     cout << "train batch size:      " << argv[3] << endl
            << "train max epoch:       " << argv[4] << endl;
     int start_epoch = argc > 5? atoi(argv[5]) : -1;
-	// this function will generate dictionary file and params file.
+    // this function will generate dictionary file and params file.
     if (builtIn)
       trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);
     else
