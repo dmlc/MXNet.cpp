@@ -403,7 +403,7 @@ int num_embed = 256;
 int num_lstm_layer = 3;
 int num_hidden = 512;
 mx_float dropout = 0.2;
-void train(const string file, int batch_size, int max_epoch) {
+void train(const string file, int batch_size, int max_epoch, int start_epoch) {
   Context device(DeviceType::kGPU, 0);
   BucketSentenceIter dataIter(file, batch_size, device);
   string prefix = file.substr(0, file.rfind("."));
@@ -426,9 +426,15 @@ void train(const string file, int batch_size, int max_epoch) {
   // RNN.SimpleBind(device, args_map, {}, {{"data", kNullOp}});
   Executor* exe = RNN.SimpleBind(device, args_map);
 
-  Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
-  for (auto &arg : exe->arg_dict())
-    xavier(arg.first, &arg.second);
+  if (start_epoch == -1) {
+    Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
+    for (auto &arg : exe->arg_dict())
+      xavier(arg.first, &arg.second);
+  }
+  else {
+	  LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
+  }
+  start_epoch++;
 
   mx_float learning_rate = 0.0002;
   mx_float weight_decay = 0.000002;
@@ -436,7 +442,7 @@ void train(const string file, int batch_size, int max_epoch) {
 //  opt->SetParam("momentum", 0.9)->SetParam("rescale_grad", 1.0 / batch_size)
 //  ->SetParam("clip_gradient", 10);
 
-  for (int epoch = 0; epoch < max_epoch; ++epoch) {
+  for (int epoch = start_epoch; epoch < max_epoch; ++epoch) {
     dataIter.Reset();
     auto tic = chrono::system_clock::now();
     while (dataIter.Next()) {
@@ -459,7 +465,7 @@ void train(const string file, int batch_size, int max_epoch) {
     cout << "Epoch[" << epoch << "] Time Cost:" <<
         chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
     OutputPerplexity(&exe->arg_dict()["softmax_label"], &exe->outputs[0]);
-    string filepath = prefix + "-" + to_string(epoch + 1) + ".params";
+    string filepath = prefix + "-" + to_string(epoch) + ".params";
     SaveCheckpoint(filepath, RNN, exe);
   }
 }
@@ -481,7 +487,7 @@ class RNNXavier : public Xavier {
   }
 };
 
-void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
+void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int start_epoch)
 {
   Context device(DeviceType::kGPU, 0);
   BucketSentenceIter dataIter(file, batch_size, device);
@@ -502,9 +508,15 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
   vector<mx_float> zeros(batch_size * num_lstm_layer * num_hidden, 0);
   Executor* exe = RNN.SimpleBind(device, args_map);
 
-  RNNXavier xavier = RNNXavier(Xavier::gaussian, Xavier::in, 2.34);
-  for (auto &arg : exe->arg_dict())
-    xavier(arg.first, &arg.second);
+  if (start_epoch == -1) {
+    RNNXavier xavier = RNNXavier(Xavier::gaussian, Xavier::in, 2.34);
+    for (auto &arg : exe->arg_dict())
+      xavier(arg.first, &arg.second);
+  }
+  else {
+	  LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
+  }
+  start_epoch++;
 
   mx_float learning_rate = 0.0002;
   mx_float weight_decay = 0.000002;
@@ -512,7 +524,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
 //  opt->SetParam("momentum", 0.9)->SetParam("rescale_grad", 1.0 / batch_size)
 //  ->SetParam("clip_gradient", 10);
 
-  for (int epoch = 0; epoch < max_epoch; ++epoch) {
+  for (int epoch = start_epoch; epoch < max_epoch; ++epoch) {
     dataIter.Reset();
     auto tic = chrono::system_clock::now();
     while (dataIter.Next()) {
@@ -532,7 +544,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
     cout << "Epoch[" << epoch << "] Time Cost:" <<
         chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
     OutputPerplexity(&exe->arg_dict()["softmax_label"], &exe->outputs[0]);
-    string filepath = prefix + "-" + to_string(epoch + 1) + ".params";
+    string filepath = prefix + "-" + to_string(epoch) + ".params";
     SaveCheckpoint(filepath, RNN, exe);
   }
 }
@@ -657,7 +669,7 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
 int main(int argc, char** argv) {
   if (argc < 5) {
     cout <<
-    "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file} {batch size} {max epoch}"
+    "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file} {batch size} {max epoch} [{starting epoch}]"
     << endl;
     cout <<
     "Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file} {dictionary file} {beginning of text}"
@@ -676,11 +688,12 @@ int main(int argc, char** argv) {
   if (task.find("train") == 0) {
     cout << "train batch size: " << argv[3] << endl
            << "train max epoch: " << argv[4] << endl;
+    int start_epoch = argc > 5? atoi(argv[5]) : -1;
 	// this function will generate dictionary file and params file.
     if (builtIn)
-      trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]));
+      trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);
     else
-      train(argv[2], atoi(argv[3]), atoi(argv[4]));  // ditto
+      train(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);  // ditto
   }
   else if (task.find("predict") == 0) {
     wstring text;// = L"If there is anyone out there who still doubts ";
