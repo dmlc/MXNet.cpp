@@ -5,9 +5,11 @@
  * The generated params file is compatiable with python version.
  * train() and predict() has been verified with original data samples.
  * 2017/1/23: add faster version charRNN based on built-in cuDNN RNN operator.
+ * Support time major computation graph, although no substantial performance difference.
+ * Rename params file epoch number starts from zero.
  */
 
-#pragma warning(disable: 4996)
+#pragma warning(disable: 4996)  // VS2015 complains on 'std::copy' ...
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -107,8 +109,7 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
   auto pred = FullyConnected("pred", hidden_concat, cls_weight, cls_bias, input_dim);
 
   auto label = Symbol::Variable("softmax_label");
-  if (!TIME_MAJOR && isTrain)
-	  label = transpose(label);
+  label = transpose(label);
   label = Reshape(label, Shape(), false, Shape(-1));  // -1: infer from graph
   auto sm = SoftmaxOutput("softmax", pred, label);
   if (isTrain)
@@ -135,10 +136,9 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
   auto label = Symbol::Variable("softmax_label");
   label = transpose(label);
-  if (!TIME_MAJOR && isTrain) {
-	  embed = SwapAxis(embed, 0, 1);  // Change to time-major
-      label = Reshape(label, Shape(), false, Shape(-1));
-  }
+  label = Reshape(label, Shape(), false, Shape(-1));  // FullyConnected requires one dimension
+  if (!TIME_MAJOR && isTrain)
+	  embed = SwapAxis(embed, 0, 1);  // Change to time-major as cuDNN requires
 
   // We need not do the SwapAxis op as python version does. Direct and better performance in C++!
   auto rnn_h_init = Symbol::Variable("LSTM_init_h");
@@ -151,10 +151,15 @@ Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_d
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
   auto pred = FullyConnected("pred", hidden, cls_weight, cls_bias, input_dim);
-  if (TIME_MAJOR && isTrain)
-	  pred = Reshape(pred, Shape(), false, Shape(sequence_length, -1, input_dim));
+  /*In rnn-time-major/rnn_cell_demo.py, the author claimed time-major version speeds up
+   * 1.5~2 times versus batch version. I doubts on the conclusion. In my test, the performance
+   * of both codes are almost same. In fact, there are no substantially differences between
+   * two codes. They are both based on time major cuDNN, the computation graph only differs
+   * slightly on the choices of where to put Reshape/SwapAxis/transpose operation. Here I don't
+   * use Reshape on pred and keep label shape on SoftmaxOutput like time major version code,
+   * but Reshape on label for simplification. It doesn't make influence on performacne. */
 
-  auto sm = SoftmaxOutput("softmax", pred, label, 1, -1, false, false, TIME_MAJOR);
+  auto sm = SoftmaxOutput("softmax", pred, label);
   if (isTrain)
     return sm;
   else
@@ -354,8 +359,8 @@ class BucketSentenceIter : public DataIter {
 
 void OutputPerplexity(NDArray* labels, NDArray* output) {
   vector<mx_float> charIndices, a;
-  labels->SyncCopyToCPU(&charIndices, 0L);
-  output->SyncCopyToCPU(&a, 0)/*4128*84*/;
+  labels->SyncCopyToCPU(&charIndices, 0L);  // 0L indicates all
+  output->SyncCopyToCPU(&a, 0L)/*4128*84*/;
   mx_float loss = 0;
   int batchSize = labels->GetShape()[0]/*32*/, sequenceLength = labels->GetShape()[1]/*129*/,
       nSamples = output->GetShape()[0]/*4128*/, vocabSize = output->GetShape()[1]/*84*/;
@@ -676,7 +681,7 @@ int main(int argc, char** argv) {
     "Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file} {dictionary file} {beginning of text}"
     << endl;
     cout <<
-    "Note: The {params file} of train/trainBuiltIn//trainTimeMajor/trainBuiltInTimeMajor are not compatible with each other."
+    "Note: The {params file} of train/trainBuiltIn/trainTimeMajor/trainBuiltInTimeMajor are not compatible with each other."
     << endl;
     return 0;
   }
@@ -684,8 +689,8 @@ int main(int argc, char** argv) {
   string task = argv[1];
   bool builtIn = task.find("BuiltIn") != string::npos;
   TIME_MAJOR = task.find("TimeMajor") != string::npos;
-  cout << "use BuiltIn cuDNN RNN: " << builtIn << endl
-         << "use data as TimeMajor: " << TIME_MAJOR << endl;
+  cout << "use BuiltIn cuDNN RNN:      " << builtIn << endl
+         << "use data as TimeMajor:       " << TIME_MAJOR << endl;
   if (task.find("train") == 0) {
     cout << "train batch size: " << argv[3] << endl
            << "train max epoch: " << argv[4] << endl;
