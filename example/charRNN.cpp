@@ -495,6 +495,7 @@ void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch)
    num_embed, dropout);
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
+  // Avoiding SwapAxis, batch_size is of second dimension.
   args_map["LSTM_init_c"] = NDArray(Shape(num_lstm_layer, batch_size, num_hidden), device, false);
   args_map["LSTM_init_h"] = NDArray(Shape(num_lstm_layer, batch_size, num_hidden), device, false);
   args_map["softmax_label"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
@@ -612,8 +613,9 @@ void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string p
   args_map["data"] = NDArray(Shape(1, 1), device, false);
   args_map["softmax_label"] = NDArray(Shape(1, 1), device, false);
   vector<mx_float> zeros(1 * num_lstm_layer * num_hidden, 0);
-  args_map["LSTM_init_c"] = NDArray(Shape(1, num_lstm_layer, num_hidden), device, false);
-  args_map["LSTM_init_h"] = NDArray(Shape(1, num_lstm_layer, num_hidden), device, false);
+  // Avoiding SwapAxis, batch_size=1 is of second dimension.
+  args_map["LSTM_init_c"] = NDArray(Shape(num_lstm_layer, 1, num_hidden), device, false);
+  args_map["LSTM_init_h"] = NDArray(Shape(num_lstm_layer, 1, num_hidden), device, false);
   args_map["LSTM_init_c"].SyncCopyFromCPU(zeros);
   args_map["LSTM_init_h"].SyncCopyFromCPU(zeros);
   Executor* exe = RNN.SimpleBind(device, args_map);
