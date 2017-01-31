@@ -4,9 +4,15 @@
  * The code implements C++ version charRNN for mxnet\example\rnn\char-rnn.ipynb with MXNet.cpp API.
  * The generated params file is compatiable with python version.
  * train() and predict() has been verified with original data samples.
+ * 2017/1/23:
+ * Add faster version charRNN based on built-in cuDNN RNN operator, 10 times faster.
+ * Add time major computation graph, although no substantial performance difference.
+ * Support continuing training from last params file.
+ * Rename params file epoch number starts from zero.
  */
 
-#pragma warning(disable: 4996)
+#pragma warning(disable: 4996)  // VS2015 complains on 'std::copy' ...
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
@@ -34,6 +40,8 @@ struct LSTMParam {
   Symbol h2h_bias;
 };
 
+bool TIME_MAJOR = true;
+
 // LSTM Cell symbol
 LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state,
     const LSTMParam& param, int seqidx, int layeridx, mx_float dropout = 0) {
@@ -57,11 +65,14 @@ LSTMState LSTM(int num_hidden, const Symbol& indata, const LSTMState& prev_state
 }
 
 Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
-        int num_hidden, int num_embed, int batch_size, mx_float dropout = 0) {
+        int num_hidden, int num_embed, mx_float dropout = 0) {
+  auto isTrain = sequence_length > 1;
   auto data = Symbol::Variable("data");
+  if (TIME_MAJOR && isTrain)
+    data = transpose(data);
   auto embed_weight = Symbol::Variable("embed_weight");
   auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
-  auto wordvec = SliceChannel(embed, sequence_length, 1, true);
+  auto wordvec = isTrain? SliceChannel(embed, sequence_length, TIME_MAJOR? 0 : 1, true) : embed;
 
   vector<LSTMState> last_states;
   vector<LSTMParam> param_cells;
@@ -89,29 +100,72 @@ Symbol LSTMUnroll(int num_lstm_layer, int sequence_length, int input_dim,
       hidden = next_state.h;
       last_states[layer] = next_state;
     }
-        if (dropout > 0)
-            hidden = Dropout(hidden, dropout);
-        hidden_all.push_back(hidden);
+    if (dropout > 0)
+      hidden = Dropout(hidden, dropout);
+    hidden_all.push_back(hidden);
   }
 
-  auto hidden_concat = Concat(hidden_all, hidden_all.size(), 0);
+  auto hidden_concat = isTrain? Concat(hidden_all, hidden_all.size(), 0) : hidden_all[0];
   auto cls_weight = Symbol::Variable("cls_weight");
   auto cls_bias = Symbol::Variable("cls_bias");
   auto pred = FullyConnected("pred", hidden_concat, cls_weight, cls_bias, input_dim);
 
   auto label = Symbol::Variable("softmax_label");
   label = transpose(label);
-  label = Reshape(label, Shape(0));
+  label = Reshape(label, Shape(), false, Shape(-1));  // -1: infer from graph
   auto sm = SoftmaxOutput("softmax", pred, label);
-  if (sequence_length == 1) {
-    vector<Symbol> outputs = { sm };
-    for (auto& state : last_states) {
-      outputs.push_back(state.C);
-      outputs.push_back(state.h);
-    }
-    return Symbol::Group(outputs);
+  if (isTrain)
+    return sm;
+
+  vector<Symbol> outputs = { sm };
+  for (auto& state : last_states) {
+    outputs.push_back(state.C);
+    outputs.push_back(state.h);
   }
-  return sm;
+  return Symbol::Group(outputs);
+}
+
+// Currently mxnet GPU version RNN operator is implemented via *fast* NVIDIA cuDNN.
+Symbol LSTMWithBuiltInRNNOp(int num_lstm_layer, int sequence_length, int input_dim,
+ int num_hidden, int num_embed, mx_float dropout = 0) {
+  auto isTrain = sequence_length > 1;
+  auto data = Symbol::Variable("data");
+  if (TIME_MAJOR && isTrain)
+    data = transpose(data);
+
+  auto embed_weight = Symbol::Variable("embed_weight");
+  auto embed = Embedding("embed", data, embed_weight, input_dim, num_embed);
+  auto label = Symbol::Variable("softmax_label");
+  label = transpose(label);
+  label = Reshape(label, Shape(), false, Shape(-1));  // FullyConnected requires one dimension
+  if (!TIME_MAJOR && isTrain)
+    embed = SwapAxis(embed, 0, 1);  // Change to time-major as cuDNN requires
+
+  // We need not do the SwapAxis op as python version does. Direct and better performance in C++!
+  auto rnn_h_init = Symbol::Variable("LSTM_init_h");
+  auto rnn_c_init = Symbol::Variable("LSTM_init_c");
+  auto rnn_params = Symbol::Variable("LSTM_parameters");  // See explanations near RNNXavier class
+  auto rnn = RNN(embed, rnn_params, rnn_h_init, rnn_c_init, num_hidden, num_lstm_layer,
+      RNNMode::lstm, false, dropout, !isTrain);
+  auto hidden = Reshape(rnn[0], Shape(), false, Shape(-1, num_hidden));
+
+  auto cls_weight = Symbol::Variable("cls_weight");
+  auto cls_bias = Symbol::Variable("cls_bias");
+  auto pred = FullyConnected("pred", hidden, cls_weight, cls_bias, input_dim);
+  /*In rnn-time-major/rnn_cell_demo.py, the author claimed time-major version speeds up
+   * 1.5~2 times versus batch version. I doubts on the conclusion. In my test, the performance
+   * of both codes are almost same. In fact, there are no substantially differences between
+   * two codes. They are both based on time major cuDNN, the computation graph only differs
+   * slightly on the choices of where to put Reshape/SwapAxis/transpose operation. Here I don't
+   * use Reshape on pred and keep label shape on SoftmaxOutput like time major version code,
+   * but Reshape on label for simplification. It doesn't make influence on performacne. */
+
+  auto sm = SoftmaxOutput("softmax", pred, label);
+  if (isTrain)
+    return sm;
+  else
+    return Symbol::Group({ sm, rnn[1/*RNNOpOutputs::kStateOut=1*/],
+    rnn[2/*RNNOpOutputs::kStateCellOut=2*/] });
 }
 
 class Shuffler {
@@ -240,8 +294,7 @@ class BucketSentenceIter : public DataIter {
         index2chars.push_back(c);
       }
   }
-//  void buildCharIndex(wstring& content)
-//  {
+//  void buildCharIndex(wstring& content) {
 //    for (auto c : content)
 //      charIndices[c]++; // char-frequency map; then char-index map
 //    vector<tuple<wchar_t, mx_float>> characters;
@@ -307,8 +360,8 @@ class BucketSentenceIter : public DataIter {
 
 void OutputPerplexity(NDArray* labels, NDArray* output) {
   vector<mx_float> charIndices, a;
-  labels->SyncCopyToCPU(&charIndices, 0L);
-  output->SyncCopyToCPU(&a, 0)/*4128*84*/;
+  labels->SyncCopyToCPU(&charIndices, 0L);  // 0L indicates all
+  output->SyncCopyToCPU(&a, 0L)/*4128*84*/;
   mx_float loss = 0;
   int batchSize = labels->GetShape()[0]/*32*/, sequenceLength = labels->GetShape()[1]/*129*/,
       nSamples = output->GetShape()[0]/*4128*/, vocabSize = output->GetShape()[1]/*84*/;
@@ -357,7 +410,7 @@ int num_embed = 256;
 int num_lstm_layer = 3;
 int num_hidden = 512;
 mx_float dropout = 0.2;
-void train(const string file, int batch_size, int max_epoch) {
+void train(const string file, int batch_size, int max_epoch, int start_epoch) {
   Context device(DeviceType::kGPU, 0);
   BucketSentenceIter dataIter(file, batch_size, device);
   string prefix = file.substr(0, file.rfind("."));
@@ -367,7 +420,7 @@ void train(const string file, int batch_size, int max_epoch) {
   sequence_length_max = dataIter.maxSequenceLength();
 
   auto RNN = LSTMUnroll(num_lstm_layer, sequence_length_max, input_dim, num_hidden,
-      num_embed, batch_size, dropout);
+      num_embed, dropout);
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
   args_map["softmax_label"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
@@ -380,9 +433,14 @@ void train(const string file, int batch_size, int max_epoch) {
   // RNN.SimpleBind(device, args_map, {}, {{"data", kNullOp}});
   Executor* exe = RNN.SimpleBind(device, args_map);
 
-  Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
-  for (auto &arg : exe->arg_dict())
-    xavier(arg.first, &arg.second);
+  if (start_epoch == -1) {
+    Xavier xavier = Xavier(Xavier::gaussian, Xavier::in, 2.34);
+    for (auto &arg : exe->arg_dict())
+      xavier(arg.first, &arg.second);
+  } else {
+    LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
+  }
+  start_epoch++;
 
   mx_float learning_rate = 0.0002;
   mx_float weight_decay = 0.000002;
@@ -390,7 +448,7 @@ void train(const string file, int batch_size, int max_epoch) {
 //  opt->SetParam("momentum", 0.9)->SetParam("rescale_grad", 1.0 / batch_size)
 //  ->SetParam("clip_gradient", 10);
 
-  for (int epoch = 0; epoch < max_epoch; ++epoch) {
+  for (int epoch = start_epoch; epoch < max_epoch; ++epoch) {
     dataIter.Reset();
     auto tic = chrono::system_clock::now();
     while (dataIter.Next()) {
@@ -413,24 +471,101 @@ void train(const string file, int batch_size, int max_epoch) {
     cout << "Epoch[" << epoch << "] Time Cost:" <<
         chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
     OutputPerplexity(&exe->arg_dict()["softmax_label"], &exe->outputs[0]);
-    string filepath = prefix + "-" + to_string(epoch + 1) + "";
+    string filepath = prefix + "-" + to_string(epoch) + ".params";
     SaveCheckpoint(filepath, RNN, exe);
   }
 }
 
-void predict(wstring* text, int sequence_length, const string param_file,
+/*The original example, rnn_cell_demo.py, uses default Xavier as initalizer, which relies on
+ * variable name, cannot initialize LSTM_parameters. Thus it was renamed to LSTM_bias,
+ * which can be initialized as zero. But it cannot converge after 100 epochs in this corpus
+ * example. Using RNNXavier, after 15 oscillating epochs,  it rapidly converges like old
+ * LSTMUnroll version. */
+class RNNXavier : public Xavier {
+ public:
+  RNNXavier(RandType rand_type = gaussian, FactorType factor_type = avg,
+    float magnitude = 3) : Xavier(rand_type, factor_type, magnitude) {
+  }
+  virtual ~RNNXavier() {}
+ protected:
+  virtual void InitDefault(NDArray* arr) {
+    Xavier::InitWeight(arr);
+  }
+};
+
+void trainWithBuiltInRNNOp(const string file, int batch_size, int max_epoch, int start_epoch) {
+  Context device(DeviceType::kGPU, 0);
+  BucketSentenceIter dataIter(file, batch_size, device);
+  string prefix = file.substr(0, file.rfind("."));
+  dataIter.saveCharIndices(prefix + ".dictionary");
+
+  input_dim = static_cast<int>(dataIter.characterSize());
+  sequence_length_max = dataIter.maxSequenceLength();
+
+  auto RNN = LSTMWithBuiltInRNNOp(num_lstm_layer, sequence_length_max, input_dim, num_hidden,
+      num_embed, dropout);
+  map<string, NDArray> args_map;
+  args_map["data"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
+  // Avoiding SwapAxis, batch_size is of second dimension.
+  args_map["LSTM_init_c"] = NDArray(Shape(num_lstm_layer, batch_size, num_hidden), device, false);
+  args_map["LSTM_init_h"] = NDArray(Shape(num_lstm_layer, batch_size, num_hidden), device, false);
+  args_map["softmax_label"] = NDArray(Shape(batch_size, sequence_length_max), device, false);
+  vector<mx_float> zeros(batch_size * num_lstm_layer * num_hidden, 0);
+  Executor* exe = RNN.SimpleBind(device, args_map);
+
+  if (start_epoch == -1) {
+    RNNXavier xavier = RNNXavier(Xavier::gaussian, Xavier::in, 2.34);
+    for (auto &arg : exe->arg_dict())
+      xavier(arg.first, &arg.second);
+  } else {
+    LoadCheckpoint(prefix + "-" + to_string(start_epoch) + ".params", exe);
+  }
+  start_epoch++;
+
+  mx_float learning_rate = 0.0002;
+  mx_float weight_decay = 0.000002;
+  Optimizer* opt = OptimizerRegistry::Find("ccsgd");
+//  opt->SetParam("momentum", 0.9)->SetParam("rescale_grad", 1.0 / batch_size)
+//  ->SetParam("clip_gradient", 10);
+
+  for (int epoch = start_epoch; epoch < max_epoch; ++epoch) {
+    dataIter.Reset();
+    auto tic = chrono::system_clock::now();
+    while (dataIter.Next()) {
+      auto data_batch = dataIter.GetDataBatch();
+      data_batch.data.CopyTo(&exe->arg_dict()["data"]);
+      data_batch.label.CopyTo(&exe->arg_dict()["softmax_label"]);
+      exe->arg_dict()["LSTM_init_c"].SyncCopyFromCPU(zeros);
+      exe->arg_dict()["LSTM_init_h"].SyncCopyFromCPU(zeros);
+      NDArray::WaitAll();
+
+      exe->Forward(true);
+      exe->Backward();
+      exe->UpdateAll(opt, learning_rate, weight_decay);
+      NDArray::WaitAll();
+    }
+    auto toc = chrono::system_clock::now();
+    cout << "Epoch[" << epoch << "] Time Cost:" <<
+        chrono::duration_cast<chrono::seconds>(toc - tic).count() << " seconds ";
+    OutputPerplexity(&exe->arg_dict()["softmax_label"], &exe->outputs[0]);
+    string filepath = prefix + "-" + to_string(epoch) + ".params";
+    SaveCheckpoint(filepath, RNN, exe);
+  }
+}
+
+void predict(wstring* ptext, int sequence_length, const string param_file,
     const string dictionary_file) {
   Context device(DeviceType::kGPU, 0);
   auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
   auto dictionary = get<0>(results);
   auto charIndices = get<1>(results);
   input_dim = static_cast<int>(charIndices.size());
-  auto RNN = LSTMUnroll(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 1, 0);
+  auto RNN = LSTMUnroll(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 0);
 
   map<string, NDArray> args_map;
   args_map["data"] = NDArray(Shape(1, 1), device, false);
   args_map["softmax_label"] = NDArray(Shape(1, 1), device, false);
-  vector<mx_float> zeros(num_hidden, 0);
+  vector<mx_float> zeros(1 * num_hidden, 0);
   for (int l = 0; l < num_lstm_layer; l++) {
     string key = "l" + to_string(l) + "_init_";
     args_map[key + "c"] = NDArray(Shape(1, num_hidden), device, false);
@@ -445,7 +580,7 @@ void predict(wstring* text, int sequence_length, const string param_file,
   wchar_t next;
   vector<mx_float> softmax;
   softmax.resize(input_dim);
-  for (auto c : *text) {
+  for (auto c : *ptext) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&dictionary[c], 1);
     exe->Forward(false);
 
@@ -460,7 +595,7 @@ void predict(wstring* text, int sequence_length, const string param_file,
     index = (mx_float) n;
     next = charIndices[n];
   }
-  text->push_back(next);
+  ptext->push_back(next);
 
   for (int i = 0; i < sequence_length; i++) {
     exe->arg_dict()["data"].SyncCopyFromCPU(&index, 1);
@@ -476,32 +611,101 @@ void predict(wstring* text, int sequence_length, const string param_file,
     size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
     index = (mx_float) n;
     next = charIndices[n];
-    text->push_back(next);
+    ptext->push_back(next);
+  }
+}
+
+void predictWithBuiltInRNNOp(wstring* ptext, int sequence_length, const string param_file,
+  const string dictionary_file) {
+  Context device(DeviceType::kGPU, 0);
+  auto results = BucketSentenceIter::loadCharIndices(dictionary_file);
+  auto dictionary = get<0>(results);
+  auto charIndices = get<1>(results);
+  input_dim = static_cast<int>(charIndices.size());
+  auto RNN = LSTMWithBuiltInRNNOp(num_lstm_layer, 1, input_dim, num_hidden, num_embed, 0);
+
+  map<string, NDArray> args_map;
+  args_map["data"] = NDArray(Shape(1, 1), device, false);
+  args_map["softmax_label"] = NDArray(Shape(1, 1), device, false);
+  vector<mx_float> zeros(1 * num_lstm_layer * num_hidden, 0);
+  // Avoiding SwapAxis, batch_size=1 is of second dimension.
+  args_map["LSTM_init_c"] = NDArray(Shape(num_lstm_layer, 1, num_hidden), device, false);
+  args_map["LSTM_init_h"] = NDArray(Shape(num_lstm_layer, 1, num_hidden), device, false);
+  args_map["LSTM_init_c"].SyncCopyFromCPU(zeros);
+  args_map["LSTM_init_h"].SyncCopyFromCPU(zeros);
+  Executor* exe = RNN.SimpleBind(device, args_map);
+  LoadCheckpoint(param_file, exe);
+
+  mx_float index;
+  wchar_t next;
+  vector<mx_float> softmax;
+  softmax.resize(input_dim);
+  for (auto c : *ptext) {
+    exe->arg_dict()["data"].SyncCopyFromCPU(&dictionary[c], 1);
+    exe->Forward(false);
+
+    exe->outputs[0].SyncCopyToCPU(softmax.data(), input_dim);
+    exe->outputs[1].CopyTo(&args_map["LSTM_init_h"]);
+    exe->outputs[2].CopyTo(&args_map["LSTM_init_c"]);
+
+    size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
+    index = (mx_float) n;
+    next = charIndices[n];
+  }
+  ptext->push_back(next);
+
+  for (int i = 0; i < sequence_length; i++) {
+    exe->arg_dict()["data"].SyncCopyFromCPU(&index, 1);
+    exe->Forward(false);
+
+    exe->outputs[0].SyncCopyToCPU(softmax.data(), input_dim);
+    exe->outputs[1].CopyTo(&args_map["LSTM_init_h"]);
+    exe->outputs[2].CopyTo(&args_map["LSTM_init_c"]);
+
+    size_t n = max_element(softmax.begin(), softmax.end()) - softmax.begin();
+    index = (mx_float) n;
+    next = charIndices[n];
+    ptext->push_back(next);
   }
 }
 
 int main(int argc, char** argv) {
   if (argc < 5) {
-    cout << "Usage for training: charRNN train {corpus file} {batch size} {max epoch}" << endl;
-    cout <<
-    "Usage for prediction: charRNN predict {params file} {dictionary file} {beginning of text}"
-    << endl;
+    cout << "Usage for training: charRNN train[BuiltIn][TimeMajor] {corpus file}"
+            " {batch size} {max epoch} [{starting epoch}]" << endl;
+    cout <<"Usage for prediction: charRNN predict[BuiltIn][TimeMajor] {params file}"
+            " {dictionary file} {beginning of text}" << endl;
+    cout <<"Note: The {params file} of train/trainBuiltIn/trainTimeMajor/trainBuiltInTimeMajor"
+            " are not compatible with each other." << endl;
     return 0;
   }
 
   string task = argv[1];
-  if (task == "train") {
+  bool builtIn = task.find("BuiltIn") != string::npos;
+  TIME_MAJOR = task.find("TimeMajor") != string::npos;
+  cout << "use BuiltIn cuDNN RNN: " << builtIn << endl
+         << "use data as TimeMajor: " << TIME_MAJOR << endl;
+  if (task.find("train") == 0) {
+    cout << "train batch size:      " << argv[3] << endl
+           << "train max epoch:       " << argv[4] << endl;
+    int start_epoch = argc > 5? atoi(argv[5]) : -1;
     // this function will generate dictionary file and params file.
-    train(argv[2], atoi(argv[3]), atoi(argv[4]));
-  } else if (task == "predict") {
+    if (builtIn)
+      trainWithBuiltInRNNOp(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);
+    else
+      train(argv[2], atoi(argv[3]), atoi(argv[4]), start_epoch);  // ditto
+  } else if (task.find("predict") == 0) {
     wstring text;  // = L"If there is anyone out there who still doubts ";
     // Considering of extending to Chinese samples in future, use wchar_t instead of char
     for (char c : string(argv[4]))
       text.push_back((wchar_t) c);
     /*Python version predicts text default to random selecltions. Here I didn't write the random
     code, always choose the 'best' character. So the text length reduced to 600. Longer size often
-  leads to repeated sentances, since training sequence length is only 129 for obama corpus.*/
-    predict(&text, 600, argv[2], argv[3]);
+    leads to repeated sentances, since training sequence length is only 129 for obama corpus.*/
+    if (builtIn)
+      predictWithBuiltInRNNOp(&text, 600, argv[2], argv[3]);
+    else
+      predict(&text, 600, argv[2], argv[3]);
     wcout << text << endl;
   }
 

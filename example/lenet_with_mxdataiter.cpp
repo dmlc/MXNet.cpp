@@ -114,5 +114,6 @@ int main(int argc, char const *argv[]) {
     }
     LG << "Accuracy: " << acu.Get();
   }
+  MXNotifyShutdown();
   return 0;
 }
