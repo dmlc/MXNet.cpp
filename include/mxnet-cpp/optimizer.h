@@ -97,7 +97,6 @@ class OptimizerRegistry {
   OptimizerRegistry() = delete;
   ~OptimizerRegistry() = delete;
 };
-std::map<std::string, OptimizerCreator> OptimizerRegistry::cmap_;
 
 #define MXNETCPP_REGISTER_OPTIMIZER(Name, OptimizerType)          \
   static int __make_ ## OptimizerType ## _ ## Name ## __ = \
@@ -115,8 +114,6 @@ class SGDOptimizer : public Optimizer {
   AtomicSymbolCreator update_handle_;
   AtomicSymbolCreator mom_update_handle_;
 };
-MXNETCPP_REGISTER_OPTIMIZER(sgd, SGDOptimizer);
-MXNETCPP_REGISTER_OPTIMIZER(ccsgd, SGDOptimizer);  // For backward compatibility
 
 
 }  // namespace cpp

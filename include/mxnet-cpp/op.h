@@ -12,7 +12,7 @@
 #include <vector>
 #include "mxnet-cpp/base.h"
 #include "mxnet-cpp/shape.h"
-#include "mxnet-cpp/MxNetCpp.h"
+#include "mxnet-cpp/operator.h"
 
 namespace mxnet {
 namespace cpp {

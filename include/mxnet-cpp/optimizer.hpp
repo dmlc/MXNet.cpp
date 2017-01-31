@@ -23,6 +23,11 @@ namespace cpp {
 
 OpMap* Optimizer::op_map_ = new OpMap();
 
+std::map<std::string, OptimizerCreator> OptimizerRegistry::cmap_;
+
+MXNETCPP_REGISTER_OPTIMIZER(sgd, SGDOptimizer);
+MXNETCPP_REGISTER_OPTIMIZER(ccsgd, SGDOptimizer);  // For backward compatibility
+
 Optimizer::~Optimizer() {}
 
 void Optimizer::Update(int index, NDArray weight, NDArray grad, mx_float lr,

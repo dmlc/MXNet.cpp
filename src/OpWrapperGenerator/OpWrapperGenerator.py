@@ -338,7 +338,7 @@ if __name__ == "__main__":
                  "#include <vector>\n"
                  "#include \"mxnet-cpp/base.h\"\n"
                  "#include \"mxnet-cpp/shape.h\"\n"
-                 "#include \"mxnet-cpp/MxNetCpp.h\"\n"
+                 "#include \"mxnet-cpp/operator.h\"\n"
                  "\n"
                  "namespace mxnet {\n"
                  "namespace cpp {\n"
