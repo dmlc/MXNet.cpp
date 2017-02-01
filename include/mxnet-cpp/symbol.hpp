@@ -59,7 +59,7 @@ Symbol Symbol::operator[](const std::string &index) {
       return (*this)[i];
     }
   }
-  LOG_FATAL.stream() << "Cannot find output that matches name " << index;
+  LOG(FATAL) << "Cannot find output that matches name " << index;
   return (*this)[0];
 }
 Symbol Symbol::Group(const std::vector<Symbol> &symbols) {

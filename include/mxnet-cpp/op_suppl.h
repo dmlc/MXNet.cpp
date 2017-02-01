@@ -8,6 +8,7 @@
 #ifndef OP_SUPPL_H
 #define OP_SUPPL_H
 
+#include <cassert>
 #include <string>
 #include <vector>
 #include "mxnet-cpp/base.h"
@@ -119,10 +120,10 @@ inline Symbol Crop(const std::string& symbol_name,
 
 /*!
  * \breif Slice input equally along specified axis.
- * \param data input symbol. 
- * \param num_outputs Number of outputs to be sliced. 
- * \param axis Dimension along which to slice. 
- * \param squeeze_axis If true AND the sliced dimension becomes 1, squeeze that dimension. 
+ * \param data input symbol.
+ * \param num_outputs Number of outputs to be sliced.
+ * \param axis Dimension along which to slice.
+ * \param squeeze_axis If true AND the sliced dimension becomes 1, squeeze that dimension.
  * \return new symbol
  */
 inline Symbol SliceChannel(Symbol data,
@@ -140,10 +141,10 @@ inline Symbol SliceChannel(Symbol data,
 /*!
  * \breif Slice input equally along specified axis.
  * \param symbol_name name of the resulting symbol.
- * \param data input symbol. 
- * \param num_outputs Number of outputs to be sliced. 
- * \param axis Dimension along which to slice. 
- * \param squeeze_axis If true AND the sliced dimension becomes 1, squeeze that dimension. 
+ * \param data input symbol.
+ * \param num_outputs Number of outputs to be sliced.
+ * \param axis Dimension along which to slice.
+ * \param squeeze_axis If true AND the sliced dimension becomes 1, squeeze that dimension.
  * \return new symbol
  */
 inline Symbol SliceChannel(const std::string& symbol_name,
@@ -163,8 +164,8 @@ inline Symbol SliceChannel(const std::string& symbol_name,
  *        Softmax Activation is only available with CUDNN on GPUand will be
  *        computed at each location across channel if input is 4D.
  * \param symbol_name name of the resulting symbol.
- * \param data Input data to activation function. 
- * \param act_type Activation function to be applied. 
+ * \param data Input data to activation function.
+ * \param act_type Activation function to be applied.
  * \return new symbol
  */
 inline Symbol Activation(const std::string& symbol_name,
