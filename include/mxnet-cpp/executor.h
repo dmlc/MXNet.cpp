@@ -120,8 +120,8 @@ class Executor {
     std::map<std::string, NDArray> ret;
     std::set<std::string> name_set;
     for (const auto &s : names) {
-      CHECK_EQ(name_set.find(s), name_set.end()) << "Duplicate names detected, "
-                                                 << s;
+      CHECK(name_set.find(s) == name_set.end()) << "Duplicate names detected, "
+                                                << s;
       name_set.insert(s);
     }
     CHECK_EQ(name_set.size(), arrays.size())
