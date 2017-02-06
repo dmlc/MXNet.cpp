@@ -94,13 +94,19 @@ class Xavier : public Initializer {
  protected:
   virtual void InitWeight(NDArray* arr) {
     Shape shape(arr->GetShape());
-    float hw_scale = 1.0f;
-    if (shape.ndim() > 2) {
+    float fan_in, fan_out;
+    if (shape.ndim() >= 2) {
+      float hw_scale = 1.0f;
       for (size_t i = 2; i < shape.ndim(); ++i) {
         hw_scale *= shape[i];
       }
+      fan_in = shape[1] * hw_scale;
+      fan_out = shape[0] * hw_scale;
+    } else if (shape.ndim() == 1) {
+      fan_in = fan_out = std::sqrt(shape[0]);
+    } else {
+      return;
     }
-    float fan_in = shape[1] * hw_scale, fan_out = shape[0] * hw_scale;
     float factor = 1.0f;
     switch (factor_type) {
       case avg:
