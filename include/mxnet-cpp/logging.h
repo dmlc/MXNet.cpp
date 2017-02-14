@@ -216,7 +216,7 @@ class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
   ~LogMessageFatal() {
-    log_stream_ << "\n";
+    log_stream_ << "\nDetails: " << MXGetLastError() << "\n";
     abort();
   }
 

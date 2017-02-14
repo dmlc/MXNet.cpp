@@ -246,7 +246,8 @@ void Symbol::InferExecutorArrays(
     auto iter_req = grad_req_type.find(arg_name);
     if (iter_req != grad_req_type.end()) {
       grad_reqs->push_back(iter_req->second);
-    } else if (arg_name.rfind("data") == arg_name.length() - 4) {
+    } else if (arg_name.rfind("data") == arg_name.length() - 4
+            || arg_name.rfind("label") == arg_name.length() - 5) {
       grad_reqs->push_back(OpReqType::kNullOp);
     } else {
       grad_reqs->push_back(OpReqType::kWriteTo);
