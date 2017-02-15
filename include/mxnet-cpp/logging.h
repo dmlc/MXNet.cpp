@@ -47,7 +47,8 @@ namespace cpp {
 inline void InitLogging(const char* argv0) {
   google::InitGoogleLogging(argv0);
 }
-}}  // namespace mxnet::cpp
+}  // namespace cpp
+}  // namespace mxnet
 
 #else
 // use a light version of glog
