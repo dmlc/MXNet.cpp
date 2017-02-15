@@ -26,7 +26,8 @@ struct Error : public std::runtime_error {
    */
   explicit Error(const std::string &s) : std::runtime_error(s) {}
 };
-}}  // namespace mxnet::cpp
+}  // namespace cpp
+}  // namespace mxnet
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define noexcept(a)
@@ -264,7 +265,8 @@ class LogMessageVoidify {
   void operator&(std::ostream&) {}
 };
 
-}}
+}  // namespace cpp
+}  // namespace mxnet
 
 
 #endif
