@@ -5,15 +5,16 @@
  *  allows use of GLOG, fall back to internal
  *  implementation when disabled
  */
-#ifndef DMLC_LOGGING_H_
-#define DMLC_LOGGING_H_
+#ifndef MXNETCPP_LOGGING_H_
+#define MXNETCPP_LOGGING_H_
 #include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
-namespace dmlc {
+namespace mxnet {
+namespace cpp {
 /*!
  * \brief exception class that will be thrown by
  *  default logger if DMLC_LOG_FATAL_THROW == 1
@@ -25,7 +26,8 @@ struct Error : public std::runtime_error {
    */
   explicit Error(const std::string &s) : std::runtime_error(s) {}
 };
-}  // namespace dmlc
+}  // namespace cpp
+}  // namespace mxnet
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define noexcept(a)
@@ -40,11 +42,13 @@ struct Error : public std::runtime_error {
 #if DMLC_USE_GLOG
 #include <glog/logging.h>
 
-namespace dmlc {
+namespace mxnet {
+namespace cpp {
 inline void InitLogging(const char* argv0) {
   google::InitGoogleLogging(argv0);
 }
-}  // namespace dmlc
+}  // namespace cpp
+}  // namespace mxnet
 
 #else
 // use a light version of glog
@@ -57,7 +61,8 @@ inline void InitLogging(const char* argv0) {
 #pragma warning(disable : 4722)
 #endif
 
-namespace dmlc {
+namespace mxnet {
+namespace cpp {
 inline void InitLogging(const char* argv0) {
   // DO NOTHING
 }
@@ -65,7 +70,7 @@ inline void InitLogging(const char* argv0) {
 // Always-on checking
 #define CHECK(x)                                           \
   if (!(x))                                                \
-    dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check "  \
+    mxnet::cpp::LogMessageFatal(__FILE__, __LINE__).stream() << "Check "  \
       "failed: " #x << ' '
 #define CHECK_LT(x, y) CHECK((x) < (y))
 #define CHECK_GT(x, y) CHECK((x) > (y))
@@ -74,7 +79,7 @@ inline void InitLogging(const char* argv0) {
 #define CHECK_EQ(x, y) CHECK((x) == (y))
 #define CHECK_NE(x, y) CHECK((x) != (y))
 #define CHECK_NOTNULL(x) \
-  ((x) == NULL ? dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check  notnull: "  #x << ' ', (x) : (x)) // NOLINT(*)
+  ((x) == NULL ? mxnet::cpp::LogMessageFatal(__FILE__, __LINE__).stream() << "Check  notnull: "  #x << ' ', (x) : (x)) // NOLINT(*)
 // Debug-only checking.
 #ifdef NDEBUG
 #define DCHECK(x) \
@@ -102,13 +107,13 @@ inline void InitLogging(const char* argv0) {
 #endif  // NDEBUG
 
 #if DMLC_LOG_CUSTOMIZE
-#define LOG_INFO dmlc::CustomLogMessage(__FILE__, __LINE__)
+#define LOG_INFO mxnet::cpp::CustomLogMessage(__FILE__, __LINE__)
 #else
-#define LOG_INFO dmlc::LogMessage(__FILE__, __LINE__)
+#define LOG_INFO mxnet::cpp::LogMessage(__FILE__, __LINE__)
 #endif
 #define LOG_ERROR LOG_INFO
 #define LOG_WARNING LOG_INFO
-#define LOG_FATAL dmlc::LogMessageFatal(__FILE__, __LINE__)
+#define LOG_FATAL mxnet::cpp::LogMessageFatal(__FILE__, __LINE__)
 #define LOG_QFATAL LOG_FATAL
 
 // Poor man version of VLOG
@@ -117,14 +122,14 @@ inline void InitLogging(const char* argv0) {
 #define LOG(severity) LOG_##severity.stream()
 #define LG LOG_INFO.stream()
 #define LOG_IF(severity, condition) \
-  !(condition) ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
+  !(condition) ? (void)0 : mxnet::cpp::LogMessageVoidify() & LOG(severity)
 
 #ifdef NDEBUG
 #define LOG_DFATAL LOG_ERROR
 #define DFATAL ERROR
-#define DLOG(severity) true ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
+#define DLOG(severity) true ? (void)0 : mxnet::cpp::LogMessageVoidify() & LOG(severity)
 #define DLOG_IF(severity, condition) \
-  (true || !(condition)) ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
+  (true || !(condition)) ? (void)0 : mxnet::cpp::LogMessageVoidify() & LOG(severity)
 #else
 #define LOG_DFATAL LOG_FATAL
 #define DFATAL FATAL
@@ -261,7 +266,9 @@ class LogMessageVoidify {
   void operator&(std::ostream&) {}
 };
 
-}  // namespace dmlc
+}  // namespace cpp
+}  // namespace mxnet
+
 
 #endif
-#endif  // DMLC_LOGGING_H_
+#endif  // MXNET_CPP_LOGGING_H_
