@@ -63,7 +63,7 @@ Executor::Executor(const Symbol &symbol, Context context,
                             grad_handles.data(), grad_reqs_uint.data(),
                             aux_handles.size(), aux_handles.data(),
                             shared_exec_handle, &handle_),
-           0);
+           0) << "\n " << MXGetLastError();
 
   mx_uint out_size;
   NDArrayHandle *out_array;

@@ -181,7 +181,7 @@ void Symbol::InferShape(
                               &out_shape_size, &out_shape_ndim, &out_shape_data,
                               &aux_shape_size, &aux_shape_ndim, &aux_shape_data,
                               &complete),
-           0);
+           0) << "\n " << MXGetLastError();
 
   if (complete) {
     for (mx_uint i = 0; i < in_shape_size; ++i) {
